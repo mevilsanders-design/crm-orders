@@ -289,4 +289,10 @@
 
           let match = true;
           for (const word of words) {
-            if (!nameLower.includes(word) && !addressLower.includes(
+            if (!nameLower.includes(word) && !addressLower.includes(word)) {
+              match = false;
+              break;
+            }
+          }
+
+          if (
