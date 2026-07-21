@@ -1,295 +1,307 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>CRM: Торговый представитель</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CRM Trade Mobile</title>
+    <!-- Иконка приложения (опционально, можно заменить на свою) -->
+    <link rel="apple-touch-icon" href="icon.png">
     <style>
-      :root {
-        --primary: #007bff;
-        --success: #28a745;
-        --warning: #ffc107;
-        --danger: #dc3545;
-        --gray: #6c757d;
-        --bg: #f8f9fa;
-      }
-      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: var(--bg); color: #333; -webkit-tap-highlight-color: transparent; }
-      .app { display: flex; flex-direction: column; height: 100vh; }
+        :root {
+            --primary: #007bff;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg: #f4f6f9;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-      /* Sidebar */
-      .sidebar { width: 240px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; flex-shrink: 0; }
-      @media (max-width: 768px) { .sidebar { display: none; } }
-      
-      .logo { padding: 16px; font-weight: bold; border-bottom: 1px solid #eee; }
-      .nav-list { list-style: none; padding: 0; margin: 0; }
-      .nav-item { padding: 14px 16px; cursor: pointer; color: #333; border-left: 4px solid transparent; }
-      .nav-item:hover { background: #f1f1f1; }
-      .nav-item.active { background: #eef6ff; border-left-color: var(--primary); color: var(--primary); font-weight: 600; }
+        /* Шапка */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
 
-      /* Mobile header */
-      .mobile-header { display: none; background: #fff; padding: 12px; border-bottom: 1px solid #ddd; }
-      @media (max-width: 768px) {
-        .mobile-header { display: block; }
-        .app { flex-direction: column; }
-      }
-      .mobile-menu-btn { background: none; border: 1px solid #ccc; padding: 8px 12px; border-radius: 6px; }
+        h1 { margin: 0; font-size: 1.2rem; }
 
-      /* Main */
-      .main { flex: 1; padding: 20px; overflow: auto; }
-      h2 { margin-top: 0; }
+        /* Основной контент */
+        .container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
 
-      /* Search */
-      .search-box { margin-bottom: 16px; }
-      input[type="text"], input[type="date"], input[type="number"], select, textarea {
-        padding: 10px; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+        /* Карточки заявок */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .card:active { transform: scale(0.98); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .client-name { font-weight: bold; font-size: 1.1rem; color: var(--primary); }
+        .status-badge { font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; background: #eee; color: #555; }
+        .amount { color: var(--success); font-weight: bold; }
 
-      /* Tables */
-      table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-      th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-      th { background: #f5f5f5; }
-      @media (max-width: 600px) {
-        table, thead, tbody, th, td, tr { display: block; }
-        thead { display: none; }
-        tr { margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
-        td { text-align: right; padding: 6px 0; border-top: 1px solid #eee; }
-        td:before { content: attr(data-label); font-weight: bold; float: left; color: #555; }
-      }
+        .card-details { color: #666; font-size: 0.9rem; line-height: 1.4; }
+        .address { color: #444; font-weight: 600; }
 
-      /* Status badges */
-      .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-      .status-white { background: #ccc; color: #000; }
-      .status-orange { background: var(--warning); color: #000; }
-      .status-red { background: var(--danger); }
-      .status-green { background: var(--success); }
+        /* Формы */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        textarea { resize: vertical; height: 100px; }
 
-      /* Client row styles */
-      .client-row { display: flex; align-items: center; gap: 8px; }
-      .client-closed { color: var(--gray); text-decoration: line-through; }
-      .marker-today { color: var(--success); font-weight: bold; }
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:active { background: #0056b3; }
+        .btn-danger { background: var(--danger); color: white; margin-top: 10px;}
+        .btn-back { background: #ccc; color: black; }
 
-      /* Forms */
-      .form-group { margin-bottom: 16px; }
-      label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
-      textarea { resize: vertical; height: 90px; }
-
-      /* Buttons */
-      button { padding: 12px 18px; cursor: pointer; border: none; border-radius: 6px; font-size: 15px; font-weight: 500; }
-      .btn-primary { background: var(--primary); color: white; }
-      .btn-success { background: var(--success); color: white; }
-      .btn-danger { background: var(--danger); color: white; }
-      .btn-sm { padding: 6px 10px; font-size: 13px; }
-      .btn-outline { background: transparent; border: 1px solid #ccc; color: #333; }
-
-      /* Sections */
-      .section { display: none; }
-      .section.active { display: block; animation: fadeIn 0.2s ease; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-      /* Footer action bar */
-      .footer-action { margin-top: 20px; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
+        /* Модальное окно (просмотр заявки) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal h2 { margin-top: 0; color: var(--primary); }
+        .detail-row { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .detail-label { color: #888; font-size: 0.9rem; display: block; }
+        .detail-value { font-size: 1rem; font-weight: 500; }
     </style>
-  </head>
-  <body>
-    <div class="app">
-      <!-- Mobile header -->
-      <div class="mobile-header">
-        <button class="mobile-menu-btn" onclick="toggleSidebar()">≡ Меню</button>
-        <span style="margin-left:12px; font-weight:bold;">CRM Trade</span>
-      </div>
+</head>
+<body>
 
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <div class="logo">CRM Trade</div>
-        <ul class="nav-list">
-          <li class="nav-item active" onclick="nav('home')">Главная</li>
-          <li class="nav-item" onclick="nav('orders')">Заказы</li>
-          <li class="nav-item" onclick="nav('collections')">Инкассации</li>
-          <li class="nav-item" onclick="nav('history')">История продаж</li>
-        </ul>
-      </aside>
+    <header>
+        <h1>CRM Trade</h1>
+    </header>
 
-      <!-- Main -->
-      <main class="main">
+    <div class="container" id="main-view">
+        <!-- Кнопка добавления -->
+        <button class="btn-primary" onclick="showAddForm()">+ Новая заявка</button>
+        
+        <!-- Список заявок -->
+        <div id="orders-list" style="margin-top: 20px;"></div>
+    </div>
 
-        <!-- Главная: Маршрутный лист -->
-        <section id="home" class="section active">
-          <h2>Маршрутный лист</h2>
-          <div class="search-box">
-            <input type="text" id="global-search" placeholder="Поиск по названию или адресу" oninput="globalSearch()" />
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th data-label="Клиент">Клиент</th>
-                <th data-label="Адрес">Адрес</th>
-                <th data-label="Статус">Статус</th>
-                <th data-label="Действие">Действие</th>
-              </tr>
-            </thead>
-            <tbody id="clients-list"></tbody>
-          </table>
-          <div class="footer-action">
-            <button class="btn-primary" onclick="showAddClientForm()">+ Добавить точку</button>
-          </div>
-        </section>
-
-        <!-- Форма добавления клиента -->
-        <section id="add-client" class="section">
-          <h2>Добавить клиента</h2>
-          <div class="form-group">
+    <!-- Форма добавления -->
+    <div id="add-form-view" class="container" style="display: none;">
+        <h2>Новая заявка</h2>
+        <div class="form-group">
             <label>Название клиента</label>
-            <input id="new-client-name" required />
-          </div>
-          <div class="form-group">
+            <input type="text" id="client-name" placeholder="ООО Ромашка">
+        </div>
+        <div class="form-group">
             <label>Адрес</label>
-            <input id="new-client-address" required />
-          </div>
-          <div class="form-group">
-            <label>Дата посещения (маршрута)</label>
-            <input type="date" id="new-client-date" />
-          </div>
-          <button class="btn-success" onclick="saveNewClient()">Сохранить</button>
-          <button class="btn-outline" onclick="nav('home')">Отмена</button>
-        </section>
+            <input type="text" id="client-address" placeholder="г. Москва, ул. Ленина 1">
+        </div>
+        <div class="form-group">
+            <label>Сумма заказа</label>
+            <input type="number" id="order-amount" placeholder="15000">
+        </div>
+        <div class="form-group">
+            <label>Комментарий / Статус</label>
+            <textarea id="order-comment" placeholder="Товар в наличии, ждем оплаты"></textarea>
+        </div>
+        <button class="btn-primary" onclick="saveOrder()">Сохранить заявку</button>
+        <button class="btn-back" onclick="navHome()">Назад</button>
+    </div>
 
-        <!-- Заказы -->
-        <section id="orders" class="section">
-          <h2>Заказы</h2>
-          <button class="btn-primary" onclick="createNewOrder()">Новый заказ</button>
-          <table style="margin-top:16px;">
-            <thead>
-              <tr><th data-label="№">№</th><th data-label="Клиент">Клиент</th><th data-label="Дата">Дата</th><th data-label="Сумма">Сумма</th><th data-label="Статус">Статус</th></tr>
-            </thead>
-            <tbody id="orders-list"></tbody>
-          </table>
-        </section>
-
-        <!-- Инкассации -->
-        <section id="collections" class="section">
-          <h2>Инкассации</h2>
-          <button class="btn-primary" onclick="createNewCollection()">Новая инкассация</button>
-          <table style="margin-top:16px;">
-            <thead>
-              <tr><th data-label="№">№</th><th data-label="Клиент">Клиент</th><th data-label="Дата">Дата</th><th data-label="Сумма">Сумма</th><th data-label="Статус">Статус</th></tr>
-            </thead>
-            <tbody id="collections-list"></tbody>
-          </table>
-        </section>
-
-        <!-- История продаж -->
-        <section id="history" class="section">
-          <h2>История продаж</h2>
-          <select id="history-client-select" onchange="loadHistoryForClient()" style="width:auto;"></select>
-          <table style="margin-top:16px;">
-            <thead>
-              <tr><th data-label="Товар">Товар</th><th data-label="Цена">Цена</th><th data-label="Частота">Частота (3 мес)</th></tr>
-            </thead>
-            <tbody id="history-list"></tbody>
-          </table>
-        </section>
-
-        <!-- Форма нового заказа -->
-        <section id="order-form" class="section">
-          <h2>Новый заказ</h2>
-          <div class="form-group">
-            <label>Клиент</label>
-            <select id="order-client"></select>
-          </div>
-          <div class="form-group">
-            <label>Дата отгрузки</label>
-            <input type="date" id="order-date" />
-          </div>
-          <div class="form-group">
-            <label>Комментарий</label>
-            <textarea id="order-comment"></textarea>
-          </div>
-          <div class="form-group">
-            <h3>Позиции</h3>
-            <div id="order-items"></div>
-            <button class="btn-outline" onclick="addOrderItemRow()">+ Добавить позицию</button>
-          </div>
-          <button class="btn-success" style="padding:14px 24px;font-size:16px;" onclick="finishOrder()">Готово</button>
-          <button class="btn-outline" onclick="nav('orders')">Отмена</button>
-        </section>
-
-        <!-- Форма новой инкассации -->
-        <section id="collection-form" class="section">
-          <h2>Новая инкассация</h2>
-          <div class="form-group">
-            <label>Клиент</label>
-            <select id="collection-client"></select>
-          </div>
-          <div class="form-group">
-            <label>Дата операции</label>
-            <input type="date" id="collection-date" />
-          </div>
-          <div class="form-group">
-            <label>Сумма</label>
-            <input type="number" id="collection-amount" step="0.01" />
-          </div>
-          <button class="btn-success" style="padding:14px 24px;font-size:16px;" onclick="finishCollection()">Готово</button>
-          <button class="btn-outline" onclick="nav('collections')">Отмена</button>
-        </section>
-      </main>
+    <!-- Модальное окно просмотра -->
+    <div class="modal-overlay" id="view-modal">
+        <div class="modal">
+            <h2 id="modal-title">Детали заявки</h2>
+            <div class="detail-row">
+                <span class="detail-label">Клиент</span>
+                <span class="detail-value" id="modal-client"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Адрес</span>
+                <span class="detail-value" id="modal-address"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Сумма</span>
+                <span class="detail-value amount" id="modal-amount"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Комментарий</span>
+                <span class="detail-value" id="modal-comment"></span>
+            </div>
+            <button class="btn-danger" onclick="closeModal()">Закрыть</button>
+        </div>
     </div>
 
     <script>
-      // --- Инициализация данных ---
-      function initStorage() {
-        if (!localStorage.getItem('clients')) localStorage.setItem('clients', JSON.stringify([]));
-        if (!localStorage.getItem('orders')) localStorage.setItem('orders', JSON.stringify([]));
-        if (!localStorage.getItem('collections')) localStorage.setItem('collections', JSON.stringify([]));
-        if (!localStorage.getItem('history')) localStorage.setItem('history', JSON.stringify([]));
-      }
+        // --- Логика хранения данных ---
+        const STORAGE_KEY = 'crm_orders_v1';
 
-      function getClients() { return JSON.parse(localStorage.getItem('clients')); }
-      function saveClients(arr) { localStorage.setItem('clients', JSON.stringify(arr)); }
-
-      // --- Навигация ---
-      function toggleSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        sidebar.style.display = sidebar.style.display === 'flex' ? 'none' : 'flex';
-      }
-
-      function nav(sectionId) {
-        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        const activeSection = document.getElementById(sectionId);
-        if (activeSection) {
-          activeSection.classList.add('active');
-          document.querySelector('.sidebar').style.display = 'none';
+        function getOrders() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
         }
-        
-        if (sectionId === 'home') renderHome();
-        if (sectionId === 'orders') renderOrders();
-        if (sectionId === 'collections') renderCollections();
-        if (sectionId === 'history') renderHistorySelect();
-      }
 
-      // --- Поиск ---
-      function globalSearch() {
-        const query = document.getElementById('global-search').value.trim().toLowerCase();
-        const words = query.split(/\s+/).filter(w => w.length > 0);
-        const clients = getClients();
-        const tbody = document.getElementById('clients-list');
-        tbody.innerHTML = '';
+        function saveOrders(orders) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+        }
 
-        clients.forEach(client => {
-          const nameLower = client.name.toLowerCase();
-          const addressLower = client.address.toLowerCase();
+        // --- Инициализация ---
+        function renderList() {
+            const list = document.getElementById('orders-list');
+            const orders = getOrders();
+            list.innerHTML = '';
 
-          let match = true;
-          for (const word of words) {
-            if (!nameLower.includes(word) && !addressLower.includes(word)) {
-              match = false;
-              break;
+            if (orders.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#888;">Пока нет заявок. Добавьте первую!</p>';
+                return;
             }
-          }
 
-          if (match) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td data-label="Клиент">${client.name}</td>
-              <td data-label="Адрес">${client.address}</td>
-              <td data-label="Статус"><span class="status-badge status-white">Активен</span></td>
-              <td data-label="Действие"><button class="btn-sm btn-outline
+            orders.forEach((order, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openViewModal(order);
+                
+                // Форматирование суммы
+                const amount = order.amount ? order.amount.toLocaleString() + ' ₽' : 'Нет суммы';
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="client-name">${escapeHtml(order.client)}</span>
+                        <span class="status-badge">Заявка</span>
+                    </div>
+                    <div class="card-details">
+                        <div class="address">📍 ${escapeHtml(order.address)}</div>
+                        <div class="amount">💰 ${amount}</div>
+                        <div style="color:#777; font-size:0.85rem;">${escapeHtml(order.comment)}</div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // --- Навигация ---
+        function navHome() {
+            document.getElementById('main-view').style.display = 'block';
+            document.getElementById('add-form-view').style.display = 'none';
+            renderList();
+        }
+
+        function showAddForm() {
+            // Очистка полей
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-address').value = '';
+            document.getElementById('order-amount').value = '';
+            document.getElementById('order-comment').value = '';
+            
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('add-form-view').style.display = 'block';
+        }
+
+        // --- Сохранение ---
+        function saveOrder() {
+            const name = document.getElementById('client-name').value.trim();
+            const address = document.getElementById('client-address').value.trim();
+            const amount = document.getElementById('order-amount').value.trim();
+            const comment = document.getElementById('order-comment').value.trim();
+
+            if (!name || !address) {
+                alert('Пожалуйста, заполните название клиента и адрес!');
+                return;
+            }
+
+            const newOrder = {
+                id: Date.now(), // Уникальный ID
+                client: name,
+                address: address,
+                amount: amount ? parseFloat(amount) : null,
+                comment: comment,
+                date: new Date().toLocaleDateString('ru-RU')
+            };
+
+            let orders = getOrders();
+            orders.unshift(newOrder); // Добавляем в начало
+            saveOrders(orders);
+
+            navHome();
+        }
+
+        // --- Просмотр заявки ---
+        function openViewModal(order) {
+            document.getElementById('modal-title').innerText = `Заявка: ${order.client}`;
+            document.getElementById('modal-client').innerText = order.client;
+            document.getElementById('modal-address').innerText = order.address;
+            
+            const amt = order.amount ? order.amount.toLocaleString() + ' ₽' : 'Не указана';
+            document.getElementById('modal-amount').innerText = amt;
+            
+            document.getElementById('modal-comment').innerText = order.comment || 'Без комментария';
+
+            document.getElementById('view-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('view-modal').style.display = 'none';
+        }
+
+        // Защита от XSS (чтобы нельзя было вставить скрипт в поле)
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Запуск
+        renderList();
+    </script>
+</body>
+</html>
