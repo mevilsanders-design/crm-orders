@@ -71,7 +71,7 @@ function globalSearch() {
 
 // --- Главная страница: Маршрутный лист ---
 function renderHome() {
-  globalSearch(); // сразу применить поиск
+  globalSearch();
 }
 
 function showAddClientForm() {
@@ -88,10 +88,16 @@ function saveNewClient() {
   if (!name) return alert('Укажите название клиента');
 
   const clients = getClients();
-  // Проверка на дубликат
   if (clients.some(c => c.name.toLowerCase() === name.toLowerCase())) {
     return alert('Клиент с таким названием уже есть');
   }
 
   const newClient = {
-    id
+    id: Date.now(),
+    name,
+    address,
+    visitDate,
+    isClosed: false
+  };
+
+  clients.push(newClient);
