@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CRM: Сбор заказов</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
+      nav button { margin-right: 8px; padding: 8px 12px; }
+      .section { display: none; }
+      .active { display: block; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+      input, select { padding: 6px; margin-right: 6px; }
+      .status-new { color: #007bff; }
+      .status-sent { color: #28a745; }
+      .status-confirmed { color: #ffc107; }
+    </style>
+  </head>
+  <body>
+    <h1>CRM для торгового представителя</h1>
+    <nav>
+      <button onclick="showSection('clients')">Клиенты</button>
+      <button onclick="showSection('products')">Товары</button>
+      <button onclick="showSection('orders')">Заказы</button>
+      <button onclick="showSection('create-order')">Новый заказ</button>
+    </nav>
+
+    <!-- Клиенты -->
+    <div id="clients" class="section active">
+      <h2>Клиенты</h2>
+      <input id="client-name" placeholder="Название клиента" />
+      <input id="client-address" placeholder="Адрес" />
+      <button onclick="addClient()">Добавить клиента</button>
+      <table>
+        <thead><tr><th>Клиент</th><th>Адрес</th></tr></thead>
+        <tbody id="clients-list"></tbody>
+      </table>
+    </div>
+
+    <!-- Товары -->
+    <div id="products" class="section">
+      <h2>Товары</h2>
+      <input id="product-name" placeholder="Наименование товара" />
+      <input id="product-price" type="number" placeholder="Цена" step="0.01" />
+      <button onclick="addProduct()">Добавить товар</button>
+      <table>
+        <thead><tr><th>Товар</th><th>Цена</th></tr></thead>
+        <tbody id="products-list"></tbody>
+      </table>
+    </div>
+
+    <!-- Заказы (список) -->
+    <div id="orders" class="section">
+      <h2>Заказы</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>№</th>
+            <th>Клиент</th>
+            <th>Дата</th>
+            <th>Сумма</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody id="orders-list"></tbody>
+      </table>
+    </div>
+
+    <!-- Новый заказ -->
+    <div id="create-order" class="section">
+      <h2>Новый заказ</h2>
+      <select id="order-client"></select>
+      <hr />
+      <div id="order-items"></div>
+      <button onclick="addOrderItemRow()">+ Добавить позицию</button>
+      <hr />
+      <button onclick="saveOrder()" style="background:#28a745;color:white;padding:10px 16px;">Сохранить заказ</button>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
