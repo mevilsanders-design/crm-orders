@@ -30,7 +30,9 @@
 
       /* Search */
       .search-box { margin-bottom: 16px; }
-      input[type="text"] { padding: 8px 12px; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+      input[type="text"], input[type="date"], input[type="number"], select, textarea {
+        padding: 8px; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
+      }
 
       /* Tables */
       table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -52,7 +54,6 @@
       /* Forms */
       .form-group { margin-bottom: 12px; }
       label { display: block; margin-bottom: 4px; font-weight: 600; }
-      input, select, textarea { padding: 8px; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
       textarea { resize: vertical; height: 80px; }
 
       /* Buttons */
@@ -81,7 +82,7 @@
       .section { display: none; }
       .section.active { display: block; }
 
-      /* Footer action bar (for adding client outside route) */
+      /* Footer action bar */
       .footer-action { margin-top: 20px; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; text-align: center; }
     </style>
   </head>
