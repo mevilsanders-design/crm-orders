@@ -20,13 +20,14 @@
   <!-- Основной контент -->
   <main class="content">
 
-    <!-- Секция: Клиенты -->
+    <!-- Секция: Клиенты (с поиском) -->
     <section id="clients" class="section active">
       <h3>Клиенты</h3>
-      <div class="form-card">
-        <input type="text" id="client-name" placeholder="Название клиента">
-        <input type="text" id="client-address" placeholder="Адрес">
-        <button onclick="addClientWithCheck()" class="btn-primary">Добавить клиента</button>
+      <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input type="text" id="client-search" placeholder="Поиск по названию или адресу" style="flex:1; min-width:200px;">
+        <input type="text" id="client-name" placeholder="Название клиента" style="flex:1; min-width:180px;">
+        <input type="text" id="client-address" placeholder="Адрес" style="flex:1; min-width:180px;">
+        <button onclick="addClientWithCheck()" class="btn-primary">Добавить</button>
       </div>
       <table>
         <thead><tr><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead>
@@ -103,7 +104,7 @@
       <button onclick="saveOrder()" class="btn-primary" style="margin-top:16px;">Сохранить заказ</button>
     </section>
 
-    <!-- Секция: Профиль клиента (история + календарь) -->
+    <!-- Секция: Профиль клиента (история + подробный календарь) -->
     <section id="client-profile" class="section">
       <a href="#" onclick="showSection('clients');return false;" style="color:#007bff;">← Назад к клиентам</a>
       <h3 id="client-profile-name"></h3>
@@ -116,7 +117,20 @@
         <tbody id="client-orders-history"></tbody>
       </table>
 
-      <div id="client-calendar-view"></div>
+      <div id="client-calendar-view">
+        <h4>Подробный календарь посещений (по дням)</h4>
+        <table id="client-calendar-table">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Заказы в этот день</th>
+              <th>Товары в заказах</th>
+              <th>Итого за день</th>
+            </tr>
+          </thead>
+          <tbody id="client-calendar-body"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
