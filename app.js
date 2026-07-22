@@ -1,11 +1,14 @@
-// Инициализация данных
-if (!localStorage.getItem('crm-clients')) localStorage.setItem('crm-clients', JSON.stringify([]));
-if (!localStorage.getItem('crm-products')) localStorage.setItem('crm-products', JSON.stringify([]));
-if (!localStorage.getItem('crm-orders')) localStorage.setItem('crm-orders', JSON.stringify([]));
+// Инициализация данных (без console.log)
+(function() {
+  const keys = ['crm-clients', 'crm-products', 'crm-orders'];
+  keys.forEach(key => {
+    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify([]));
+  });
+})();
 
-function getClients() { return JSON.parse(localStorage.getItem('crm-clients')); }
-function getProducts() { return JSON.parse(localStorage.getItem('crm-products')); }
-function getOrders() { return JSON.parse(localStorage.getItem('crm-orders')); }
+function getClients() { return JSON.parse(localStorage.getItem('crm-clients') || '[]'); }
+function getProducts() { return JSON.parse(localStorage.getItem('crm-products') || '[]'); }
+function getOrders() { return JSON.parse(localStorage.getItem('crm-orders') || '[]'); }
 
 function saveClients(arr) { localStorage.setItem('crm-clients', JSON.stringify(arr)); }
 function saveProducts(arr) { localStorage.setItem('crm-products', JSON.stringify(arr)); }
@@ -24,12 +27,11 @@ function showSection(id) {
   if (id === 'client-profile') renderClientProfile();
 }
 
-// --- КЛИЕНТЫ (с поиском) ---
+// --- КЛИЕНТЫ ---
 function renderClients() {
   const list = document.getElementById('clients-list');
   list.innerHTML = '';
-
-  const search = document.getElementById('client-search').value.trim().toLowerCase();
+  const search = (document.getElementById('client-search')?.value || '').trim().toLowerCase();
   const clients = getClients();
 
   clients.filter(c =>
@@ -40,19 +42,18 @@ function renderClients() {
     tr.innerHTML = `
       <td>${c.name}</td>
       <td>${c.address}</td>
-      <td>
-        <button class="btn-edit" onclick="editClient(${c.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteClient(${c.id})">Удалить</button>
-        <button style="background:#007bff; color:white; padding:4px 8px; margin-left:4px; border-radius:3px;"
-                onclick="openClientProfile(${c.id})">История и календарь</button>
+      <td style="white-space:nowrap;">
+        <button class="btn-edit" onclick="safeClick(event, () => editClient(${c.id}))">Изменить</button>
+        <button class="btn-delete" onclick="safeClick(event, () => deleteClient(${c.id}))">Удалить</button>
+        <button class="btn-profile" onclick="safeClick(event, () => openClientProfile(${c.id}))">История</button>
       </td>`;
     list.appendChild(tr);
   });
 }
 
 function addClientWithCheck() {
-  const name = document.getElementById('client-name').value.trim();
-  const address = document.getElementById('client-address').value.trim();
+  const name = (document.getElementById('client-name')?.value || '').trim();
+  const address = (document.getElementById('client-address')?.value || '').trim();
   if (!name) return alert('Укажите название клиента');
 
   const clients = getClients();
@@ -66,8 +67,8 @@ function addClientWithCheck() {
     clients.push({ id: Date.now(), name, address });
   }
   saveClients(clients);
-  document.getElementById('client-name').value = '';
-  document.getElementById('client-address').value = '';
+  (document.getElementById('client-name')?.value = '');
+  (document.getElementById('client-address')?.value = '');
   renderClients();
 }
 
@@ -81,8 +82,8 @@ function deleteClient(id) {
 function editClient(id) {
   const client = getClients().find(c => c.id === id);
   if (!client) return;
-  document.getElementById('client-name').value = client.name;
-  document.getElementById('client-address').value = client.address;
+  (document.getElementById('client-name')?.value = client.name);
+  (document.getElementById('client-address')?.value = client.address);
   window.currentClientId = id;
   alert('Измените данные и нажмите «Добавить» — запись обновится');
 }
@@ -92,32 +93,30 @@ function openClientProfile(clientId) {
   showSection('client-profile');
 }
 
-// --- ТОВАРЫ (с поиском) ---
+// --- ТОВАРЫ ---
 function renderProducts() {
   const list = document.getElementById('products-list');
   list.innerHTML = '';
-
-  const search = document.getElementById('product-search').value.trim().toLowerCase();
+  const search = (document.getElementById('product-search')?.value || '').trim().toLowerCase();
   const products = getProducts();
 
-  products.filter(p =>
-    p.name.toLowerCase().includes(search)
-  ).forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${p.name}</td>
-      <td>${p.price.toFixed(2)} ₽</td>
-      <td>
-        <button class="btn-edit" onclick="editProduct(${p.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteProduct(${p.id})">Удалить</button>
-      </td>`;
-    list.appendChild(tr);
-  });
+  products.filter(p => p.name.toLowerCase().includes(search))
+    .forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.name}</td>
+        <td>${p.price.toFixed(2)} ₽</td>
+        <td style="white-space:nowrap;">
+          <button class="btn-edit" onclick="safeClick(event, () => editProduct(${p.id}))">Изменить</button>
+          <button class="btn-delete" onclick="safeClick(event, () => deleteProduct(${p.id}))">Удалить</button>
+        </td>`;
+      list.appendChild(tr);
+    });
 }
 
 function addProduct() {
-  const name = document.getElementById('product-name').value.trim();
-  const price = parseFloat(document.getElementById('product-price').value);
+  const name = (document.getElementById('product-name')?.value || '').trim();
+  const price = parseFloat(document.getElementById('product-price')?.value);
   if (!name || isNaN(price)) return alert('Заполните название и цену товара');
 
   const products = getProducts();
@@ -131,8 +130,8 @@ function addProduct() {
     products.push({ id: Date.now(), name, price });
   }
   saveProducts(products);
-  document.getElementById('product-name').value = '';
-  document.getElementById('product-price').value = '';
+  (document.getElementById('product-name')?.value = '');
+  (document.getElementById('product-price')?.value = '');
   renderProducts();
 }
 
@@ -146,8 +145,8 @@ function deleteProduct(id) {
 function editProduct(id) {
   const product = getProducts().find(p => p.id === id);
   if (!product) return;
-  document.getElementById('product-name').value = product.name;
-  document.getElementById('product-price').value = product.price;
+  (document.getElementById('product-name')?.value = product.name);
+  (document.getElementById('product-price')?.value = product.price);
   window.currentProductId = id;
   alert('Измените данные и нажмите «Добавить товар» — запись обновится');
 }
@@ -159,14 +158,13 @@ function formatOrderItems(items) {
 }
 
 function calculateTotalOrdersSum(orders) {
-  return orders.reduce((sum, o) => sum + o.total, 0);
+  return orders.reduce((sum, o) => sum + (o.total || 0), 0);
 }
 
 function renderOrders() {
   const list = document.getElementById('orders-list');
   list.innerHTML = '';
-
-  const filter = document.getElementById('filter-direction').value;
+  const filter = (document.getElementById('filter-direction')?.value || '');
   const allOrders = getOrders();
 
   const filteredOrders = filter
@@ -174,7 +172,8 @@ function renderOrders() {
     : allOrders;
 
   const totalSum = calculateTotalOrdersSum(filteredOrders);
-  document.getElementById('total-orders-sum').textContent = totalSum.toFixed(2) + ' ₽';
+  const sumEl = document.getElementById('total-orders-sum');
+  if (sumEl) sumEl.textContent = totalSum.toFixed(2) + ' ₽';
 
   filteredOrders.forEach((o, idx) => {
     const shortText = o.items.map(i => `${i.qty}×${i.productName}`).join(', ');
@@ -191,13 +190,13 @@ function renderOrders() {
       <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">
         <span title="${fullText}"
               style="cursor:pointer; color:#007bff; text-decoration:underline;"
-              onclick="showOrderDetails(${o.id})">
+              onclick="safeClick(event, () => showOrderDetails(${o.id}))">
           ${shortText}
         </span>
       </td>
-      <td>
-        <button class="btn-edit" style="margin-right:4px;" onclick="editOrder(${o.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
+      <td style="white-space:nowrap;">
+        <button class="btn-edit" style="margin-right:4px;" onclick="safeClick(event, () => editOrder(${o.id}))">Изменить</button>
+        <button class="btn-delete" onclick="safeClick(event, () => deleteOrder(${o.id}))">Удалить</button>
       </td>`;
     list.appendChild(tr);
   });
@@ -208,6 +207,7 @@ function showOrderDetails(id) {
   if (!order) return;
 
   const container = document.getElementById('order-items-detail');
+  if (!container) return;
   container.innerHTML = '<ul style="padding-left:20px;">' +
     order.items.map(i => `<li>${i.qty} × ${i.productName} — ${(i.price * i.qty).toFixed(2)} ₽ (${i.price.toFixed(2)} ₽/шт)</li>`)
       .join('') +
@@ -215,7 +215,8 @@ function showOrderDetails(id) {
     `<p><strong>Итого: ${order.total.toFixed(2)} ₽</strong></p>` +
     (order.direction ? `<p><strong>Направление:</strong> ${order.direction}</p>` : '');
 
-  document.getElementById('order-details-modal').style.display = 'flex';
+  const modal = document.getElementById('order-details-modal');
+  if (modal) modal.style.display = 'flex';
 }
 
 function deleteOrder(id) {
@@ -232,7 +233,7 @@ function editOrder(id) {
   showSection('create-order');
 }
 
-// --- БЫСТРЫЙ ПОИСК И ДОБАВЛЕНИЕ ТОВАРА В ЗАКАЗ ---
+// --- БЫСТРЫЙ ПОИСК ТОВАРА В ЗАКАЗЕ ---
 function initQuickProductSearch() {
   const input = document.getElementById('quick-product-search');
   if (!input) return;
@@ -258,14 +259,14 @@ function initQuickProductSearch() {
 
     const filtered = products.filter(p => p.name.toLowerCase().includes(query));
     if (filtered.length === 0) {
-      suggestions.innerHTML = '<div style="padding:8px; color:#999;">Ничего не найдено</div>';
+      suggestions.innerHTML = '<div style="padding:12px; color:#999;">Ничего не найдено</div>';
       return;
     }
 
     filtered.forEach(p => {
       const div = document.createElement('div');
       div.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
-      div.style.padding = '8px 12px';
+      div.style.padding = '12px 16px'; // крупнее для пальца
       div.style.cursor = 'pointer';
       div.style.borderBottom = '1px solid #eee';
       div.onclick = () => {
@@ -281,10 +282,10 @@ function initQuickProductSearch() {
 function selectQuickProduct(product) {
   const row = document.createElement('div');
   row.innerHTML = `
-    <select class="order-product" style="width:auto; min-width:200px;"></select>
-    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" style="width:80px;" />
+    <select class="order-product" style="width:auto; min-width:180px;"></select>
+    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" style="width:70px; font-size:16px;" />
     <span class="row-total-display" style="font-weight:bold; margin:0 12px;"></span>
-    <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">×</button>`;
+    <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer; font-size:20px; line-height:1;">×</button>`;
   
   document.getElementById('order-items').appendChild(row);
 
@@ -297,7 +298,7 @@ function selectQuickProduct(product) {
 }
 
 function addQuickProduct() {
-  const query = document.getElementById('quick-product-search').value.trim();
+  const query = (document.getElementById('quick-product-search')?.value || '').trim();
   if (!query) return alert('Введите название товара для поиска');
 
   const products = getProducts();
@@ -325,7 +326,7 @@ function updateRowTotal(row) {
   totalSpan.textContent = lineTotal.toFixed(2) + ' ₽';
 }
 
-// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА (продолжение) ---
+// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА ---
 function renderCreateOrder() {
   const select = document.getElementById('order-client');
   select.innerHTML = '';
@@ -349,14 +350,14 @@ function renderCreateOrder() {
       if (clientOption) clientOption.selected = true;
 
       const directionSelect = document.getElementById('order-direction');
-      const directionOption = directionSelect.querySelector(`option[value="${order.direction}"]`);
+      const directionOption = directionSelect?.querySelector(`option[value="${order.direction}"]`);
       if (directionOption) directionOption.selected = true;
     }
   } else {
     document.getElementById('create-order-title').textContent = 'Новый заказ';
   }
 
-  const itemsContainer = document.getElementById('order-items');
+    const itemsContainer = document.getElementById('order-items');
   itemsContainer.innerHTML = '';
 
   if (window.editingOrderId !== undefined) {
@@ -365,10 +366,10 @@ function renderCreateOrder() {
       order.items.forEach(item => {
         const row = document.createElement('div');
         row.innerHTML = `
-          <select class="order-product" style="width:auto; min-width:200px;"></select>
-          <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="${item.qty}" style="width:80px;" />
+          <select class="order-product" style="width:auto; min-width:180px;"></select>
+          <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="${item.qty}" style="width:70px; font-size:16px;" />
           <span class="row-total-display" style="font-weight:bold; margin:0 12px;"></span>
-          <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">×</button>`;
+          <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer; font-size:20px; line-height:1;">×</button>`;
         itemsContainer.appendChild(row);
 
         const products = getProducts();
@@ -400,10 +401,10 @@ function addOrderItemRow() {
   const container = document.getElementById('order-items');
   const row = document.createElement('div');
   row.innerHTML = `
-    <select class="order-product" style="width:auto; min-width:200px;"></select>
-    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" style="width:80px;" />
+    <select class="order-product" style="width:auto; min-width:180px;"></select>
+    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" style="width:70px; font-size:16px;" />
     <span class="row-total-display" style="font-weight:bold; margin:0 12px;"></span>
-    <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">×</button>`;
+    <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer; font-size:20px; line-height:1;">×</button>`;
   container.appendChild(row);
 
   const products = getProducts();
@@ -423,9 +424,22 @@ function addOrderItemRow() {
   updateRowTotal(row);
 }
 
+// Защита от двойного клика (частая проблема на тач‑экранах)
+let clickLock = false;
+function safeClick(event, callback) {
+  event.stopPropagation();
+  if (clickLock) return;
+  clickLock = true;
+  try {
+    callback();
+  } finally {
+    setTimeout(() => clickLock = false, 300);
+  }
+}
+
 function saveOrder() {
-  const clientId = document.getElementById('order-client').value;
-  const direction = document.getElementById('order-direction').value;
+  const clientId = document.getElementById('order-client')?.value;
+  const direction = document.getElementById('order-direction')?.value;
   if (!clientId) return alert('Выберите клиента');
   if (!direction) return alert('Выберите направление');
 
@@ -506,9 +520,12 @@ function renderClientProfile() {
     return;
   }
 
-  document.getElementById('client-profile-name').textContent = client.name;
-  document.getElementById('client-profile-address').textContent = client.address;
-  document.getElementById('client-profile-id').textContent = client.id;
+  const nameEl = document.getElementById('client-profile-name');
+  const addressEl = document.getElementById('client-profile-address');
+  const idEl = document.getElementById('client-profile-id');
+  if (nameEl) nameEl.textContent = client.name;
+  if (addressEl) addressEl.textContent = client.address;
+  if (idEl) idEl.textContent = client.id;
 
   const orders = getOrders()
     .filter(o => o.clientId == clientId)
@@ -516,112 +533,116 @@ function renderClientProfile() {
 
   // История заказов
   const historyBody = document.getElementById('client-orders-history');
-  historyBody.innerHTML = '';
-  orders.forEach(o => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${o.date}</td>
-      <td>${o.direction || '-'}</td>
-      <td>${o.total.toFixed(2)} ₽</td>
-      <td class="status-${o.status}">${o.status}</td>
-      <td>
-        <button class="btn-edit" style="margin-right:4px;" onclick="editOrder(${o.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
-      </td>`;
-    historyBody.appendChild(tr);
-  });
+  if (historyBody) {
+    historyBody.innerHTML = '';
+    orders.forEach(o => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${o.date}</td>
+        <td>${o.direction || '-'}</td>
+        <td>${o.total.toFixed(2)} ₽</td>
+        <td class="status-${o.status}">${o.status}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn-edit" style="margin-right:4px;" onclick="safeClick(event, () => editOrder(${o.id}))">Изменить</button>
+          <button class="btn-delete" onclick="safeClick(event, () => deleteOrder(${o.id}))">Удалить</button>
+        </td>`;
+      historyBody.appendChild(tr);
+    });
+  }
 
   // Календарь по дням
   const calendarBody = document.getElementById('client-calendar-body');
-  calendarBody.innerHTML = '';
+  if (calendarBody) {
+    calendarBody.innerHTML = '';
 
-  const byDate = {};
-  orders.forEach(o => {
-    if (!byDate[o.date]) byDate[o.date] = [];
-    byDate[o.date].push(o);
-  });
+    const byDate = {};
+    orders.forEach(o => {
+      if (!byDate[o.date]) byDate[o.date] = [];
+      byDate[o.date].push(o);
+    });
 
-  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+    const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
 
-  dates.forEach(date => {
-    const dayOrders = byDate[date];
-    let dayTotal = 0;
-    const itemsList = [];
+    dates.forEach(date => {
+      const dayOrders = byDate[date];
+      let dayTotal = 0;
+      const itemsList = [];
 
-    dayOrders.forEach(order => {
-      dayTotal += order.total;
-      order.items.forEach(item => {
-        itemsList.push({
-          date: order.date,
-          orderId: order.id,
-          productName: item.productName,
-          qty: item.qty,
-          price: item.price,
-          lineTotal: item.total
+      dayOrders.forEach(order => {
+        dayTotal += order.total;
+        order.items.forEach(item => {
+          itemsList.push({
+            date: order.date,
+            orderId: order.id,
+            productName: item.productName,
+            qty: item.qty,
+            price: item.price,
+            lineTotal: item.total
+          });
         });
       });
-    });
 
-    // Таблица заказов за день
-    const ordersTable = document.createElement('table');
-    ordersTable.style.width = '100%';
-    ordersTable.style.borderCollapse = 'collapse';
-    ordersTable.innerHTML = `
-      <thead><tr style="background:#f8f9fa;"><th>Заказ ID</th><th>Направление</th><th>Сумма</th><th>Статус</th></tr></thead>
-      <tbody>`;
+      // Таблица заказов за день
+      const ordersTable = document.createElement('table');
+      ordersTable.style.width = '100%';
+      ordersTable.style.borderCollapse = 'collapse';
+      ordersTable.innerHTML = `
+        <thead><tr style="background:#f8f9fa;"><th>Заказ ID</th><th>Направление</th><th>Сумма</th><th>Статус</th></tr></thead>
+        <tbody>`;
 
-    dayOrders.forEach(o => {
+      dayOrders.forEach(o => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>#${o.id}</td>
+          <td>${o.direction || '-'}</td>
+          <td>${o.total.toFixed(2)} ₽</td>
+          <td class="status-${o.status}">${o.status}</td>`;
+        ordersTable.querySelector('tbody').appendChild(tr);
+      });
+      ordersTable.innerHTML += '</tbody></table>';
+
+      // Таблица товаров за день
+      const itemsTable = document.createElement('table');
+      itemsTable.style.width = '100%';
+      itemsTable.style.borderCollapse = 'collapse';
+      itemsTable.innerHTML = `
+        <thead><tr style="background:#f8f9fa;"><th>Товар</th><th>Кол-во</th><th>Цена/шт</th><th>Сумма строки</th></tr></thead>
+        <tbody>`;
+
+      itemsList.forEach(i => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i.productName}</td>
+          <td>${i.qty}</td>
+          <td>${i.price.toFixed(2)} ₽</td>
+          <td>${i.lineTotal.toFixed(2)} ₽</td>`;
+        itemsTable.querySelector('tbody').appendChild(tr);
+      });
+      itemsTable.innerHTML += '</tbody></table>';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>#${o.id}</td>
-        <td>${o.direction || '-'}</td>
-        <td>${o.total.toFixed(2)} ₽</td>
-        <td class="status-${o.status}">${o.status}</td>`;
-      ordersTable.querySelector('tbody').appendChild(tr);
+        <td>${date}</td>
+        <td style="padding:8px; background:#fafafa;">${ordersTable.outerHTML}</td>
+        <td style="padding:8px; background:#fafafa;">${itemsTable.outerHTML}</td>
+        <td><strong>${dayTotal.toFixed(2)} ₽</strong></td>`;
+      calendarBody.appendChild(tr);
     });
-    ordersTable.innerHTML += '</tbody></table>';
-
-    // Таблица товаров за день
-    const itemsTable = document.createElement('table');
-    itemsTable.style.width = '100%';
-    itemsTable.style.borderCollapse = 'collapse';
-    itemsTable.innerHTML = `
-      <thead><tr style="background:#f8f9fa;"><th>Товар</th><th>Кол-во</th><th>Цена/шт</th><th>Сумма строки</th></tr></thead>
-      <tbody>`;
-
-    itemsList.forEach(i => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${i.productName}</td>
-        <td>${i.qty}</td>
-        <td>${i.price.toFixed(2)} ₽</td>
-        <td>${i.lineTotal.toFixed(2)} ₽</td>`;
-      itemsTable.querySelector('tbody').appendChild(tr);
-    });
-    itemsTable.innerHTML += '</tbody></table>';
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${date}</td>
-      <td style="padding:8px; background:#fafafa;">${ordersTable.outerHTML}</td>
-      <td style="padding:8px; background:#fafafa;">${itemsTable.outerHTML}</td>
-      <td><strong>${dayTotal.toFixed(2)} ₽</strong></td>`;
-    calendarBody.appendChild(tr);
-  });
+  }
 }
 
 function closeOrderDetails() {
-  document.getElementById('order-details-modal').style.display = 'none';
+  const modal = document.getElementById('order-details-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('CRM started');
   showSection('clients');
   initQuickProductSearch();
 
   window.onclick = function(event) {
     const modal = document.getElementById('order-details-modal');
-    if (event.target === modal) {
+    if (modal && event.target === modal) {
       modal.style.display = 'none';
     }
   };
