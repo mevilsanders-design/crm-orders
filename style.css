@@ -2,137 +2,73 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: #f5f5f5;
+  background: #f5f6f7;
   color: #333;
 }
-
-/* Боковая панель */
 .sidebar {
   width: 220px;
-  background: #2c3e50;
-  color: white;
+  background: #fff;
+  height: 100vh;
   position: fixed;
-  height: 100%;
-  padding: 20px 12px;
-  box-sizing: border-box;
+  left: 0; top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  border-right: 1px solid #ddd;
 }
-.sidebar h2 { margin: 0 0 20px; font-size: 1.2rem; }
+.sidebar h2 { margin: 0 0 16px; font-size: 18px; }
 .nav-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 10px;
-  margin-bottom: 6px;
-  border: none;
-  background: rgba(255,255,255,0.1);
-  color: white;
-  cursor: pointer;
-  border-radius: 4px;
+  display: block; width: 100%; text-align: left; padding: 10px 12px;
+  background: none; border: 1px solid transparent; cursor: pointer;
+  margin-bottom: 6px; border-radius: 4px;
 }
-.nav-btn:hover { background: rgba(255,255,255,0.2); }
-.nav-btn.active { background: #3498db; }
+.nav-btn.active, .nav-btn:hover { background: #eef2f5; border-color: #ccc; }
 
-/* Основной контент */
-.content {
-  margin-left: 220px;
-  padding: 24px;
-}
-
+.content { margin-left: 220px; padding: 20px; }
 .section { display: none; }
 .section.active { display: block; }
 
-h3 { margin-top: 0; }
-
-.form-card {
-  background: white;
-  padding: 16px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.form-card input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  flex:1;
-  min-width: 180px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  border-radius: 6px;
-  overflow: hidden;
-}
-th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 12px; }
+th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; }
 th { background: #f8f9fa; }
 
+.form-card {
+  background: #fff; padding: 14px; border: 1px solid #ddd; border-radius: 6px;
+  margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+}
+input, select { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
 .btn-primary {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 4px;
-  cursor: pointer;
+  background: #007bff; color: #fff; border: none; padding: 8px 16px;
+  cursor: pointer; border-radius: 4px; white-space: nowrap;
 }
 .btn-secondary {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 4px;
-  cursor: pointer;
+  background: #e9ecef; color: #333; border: none; padding: 8px 16px;
+  cursor: pointer; border-radius: 4px;
 }
-.btn-edit {
-  background: #ffc107;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.btn-delete {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
+.btn-edit { background: #ffc107; color: #000; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; }
+.btn-delete { background: #dc3545; color: #fff; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; }
 
 /* Модальное окно */
 .modal {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
 }
-.modal.active { display: flex; }
 .modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  max-width: 500px;
-  width: 90%;
+  background: #fff; padding: 24px; max-width: 500px; width: 90%; border-radius: 8px; position: relative;
 }
-.close {
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-  cursor: pointer;
+.close { position: absolute; top: 12px; right: 16px; font-size: 28px; cursor: pointer; }
+
+/* Подсказки поиска */
+.quick-suggestions {
+  position: absolute;
+  top: 100%; left: 0;
+  width: 100%; background: #fff; border: 1px solid #ddd;
+  max-height: 200px; overflow-y: auto; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* Адаптив для iPhone */
 @media (max-width: 768px) {
-  .sidebar { width: 70px; padding: 10px; }
+  .sidebar { width: 80px; padding: 8px; }
+  .nav-btn span { display: none; }
   .sidebar h2 { display: none; }
-  .content { margin-left: 70px; padding: 12px; }
-  .form-card { flex-direction: column; }
+  .content { margin-left: 80px; padding: 12px; }
 }
