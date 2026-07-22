@@ -90,7 +90,29 @@ function openClientProfile(clientId) {
   showSection('client-profile');
 }
 
-// --- ТОВАРЫ ---
+// --- ТОВАРЫ (с поиском по названию) ---
+function renderProducts() {
+  const list = document.getElementById('products-list');
+  list.innerHTML = '';
+
+  const search = document.getElementById('product-search').value.trim().toLowerCase();
+  const products = getProducts();
+
+  products.filter(p =>
+    p.name.toLowerCase().includes(search)
+  ).forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.price.toFixed(2)} ₽</td>
+      <td>
+        <button class="btn-edit" onclick="editProduct(${p.id})">Изменить</button>
+        <button class="btn-delete" onclick="deleteProduct(${p.id})">Удалить</button>
+      </td>`;
+    list.appendChild(tr);
+  });
+}
+
 function addProduct() {
   const name = document.getElementById('product-name').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
@@ -126,22 +148,6 @@ function editProduct(id) {
   document.getElementById('product-price').value = product.price;
   window.currentProductId = id;
   alert('Измените данные и нажмите «Добавить товар» — запись обновится');
-}
-
-function renderProducts() {
-  const list = document.getElementById('products-list');
-  list.innerHTML = '';
-  getProducts().forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${p.name}</td>
-      <td>${p.price.toFixed(2)} ₽</td>
-      <td>
-        <button class="btn-edit" onclick="editProduct(${p.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteProduct(${p.id})">Удалить</button>
-      </td>`;
-    list.appendChild(tr);
-  });
 }
 
 // --- ЗАКАЗЫ ---
@@ -187,6 +193,8 @@ function renderOrders() {
           ${shortText}
         </span>
       </td>
+      <td>
+        <button class="btn-edit" style="margin-right
       <td>
         <button class="btn-edit" style="margin-right:4px;" onclick="editOrder(${o.id})">Изменить</button>
         <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
