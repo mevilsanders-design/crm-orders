@@ -176,6 +176,7 @@ function renderOrders() {
         </span>
       </td>
       <td>
+        <button class="btn-edit" style="margin-right:4px;" onclick="editOrder(${o.id})">Изменить</button>
         <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
       </td>`;
     list.appendChild(tr);
@@ -204,7 +205,16 @@ function deleteOrder(id) {
   renderOrders();
 }
 
-// Новый заказ (интерфейс)
+// Редактирование заказа
+function editOrder(id) {
+  const order = getOrders().find(o => o.id === id);
+  if (!order) return;
+
+  window.editingOrderId = order.id; // запоминаем ID редактируемого заказа
+  showSection('create-order');
+}
+
+// Новый заказ / редактирование заказа (интерфейс)
 function renderCreateOrder() {
   const select = document.getElementById('order-client');
   select.innerHTML = '';
@@ -220,9 +230,55 @@ function renderCreateOrder() {
     });
   }
 
+  // Если редактируем — выбираем нужного клиента и направление
+  if (window.editingOrderId !== undefined) {
+    const order = getOrders().find(o => o.id === window.editingOrderId);
+    if (order) {
+      // Выбор клиента
+      const clientOption = document.querySelector(`#order-client option[value="${order.clientId}"]`);
+      if (clientOption) clientOption.selected = true;
+
+      // Выбор направления
+      const directionSelect = document.getElementById('order-direction');
+      const directionOption = directionSelect.querySelector(`option[value="${order.direction}"]`);
+      if (directionOption) directionOption.selected = true;
+    }
+  }
+
   const itemsContainer = document.getElementById('order-items');
   itemsContainer.innerHTML = '';
-  addOrderItemRow();
+
+  if (window.editingOrderId !== undefined) {
+    // Заполняем позициями из заказа
+    const order = getOrders().find(o => o.id === window.editingOrderId);
+    if (order && order.items && order.items.length > 0) {
+      order.items.forEach(item => {
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <select class="order-product"></select>
+          <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="${item.qty}" />
+          <button onclick="this.parentElement.remove()" style="color:red;">×</button>`;
+        itemsContainer.appendChild(row);
+
+        // Заполняем выпадающий список товаров
+        const products = getProducts();
+        const sel = row.querySelector('select');
+        sel.innerHTML = '<option value="">-- выберите товар --</option>';
+        products.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
+          // Выбираем нужный товар, если совпадает
+          if (p.id == item.productId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      });
+    } else {
+      addOrderItemRow(); // если позиций нет — добавляем одну пустую
+    }
+  } else {
+    addOrderItemRow();
+  }
 }
 
 function addOrderItemRow() {
@@ -277,16 +333,36 @@ function saveOrder() {
   if (items.length === 0) return alert('Добавьте хотя бы одну позицию в заказ');
 
   const orders = getOrders();
-  orders.push({
-    id: Date.now(),
-    clientId,
-    clientName: client.name,
-    direction,
-    date: new Date().toLocaleDateString('ru-RU'),
-    items,
-    total,
-    status: 'new'
-  });
+
+  if (window.editingOrderId !== undefined) {
+    // РЕДАКТИРОВАНИЕ: обновляем существующий заказ
+    const idx = orders.findIndex(o => o.id === window.editingOrderId);
+    if (idx >= 0) {
+      orders[idx] = {
+        ...orders[idx],
+        clientId,
+        clientName: client.name,
+        direction,
+        items,
+        total,
+        date: new Date().toLocaleDateString('ru-RU') // дата обновляется при редактировании
+      };
+      delete window.editingOrderId; // сбрасываем режим редактирования
+    }
+  } else {
+    // СОЗДАНИЕ: добавляем новый заказ
+    orders.push({
+      id: Date.now(),
+      clientId,
+      clientName: client.name,
+      direction,
+      date: new Date().toLocaleDateString('ru-RU'),
+      items,
+      total,
+      status: 'new'
+    });
+  }
+
   saveOrders(orders);
   alert('Заказ сохранён!');
   showSection('orders');
