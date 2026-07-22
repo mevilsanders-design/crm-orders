@@ -90,7 +90,7 @@ function openClientProfile(clientId) {
   showSection('client-profile');
 }
 
-// --- ТОВАРЫ ---
+// --- ТОВАРЫ (с импортом из CSV) ---
 function addProduct() {
   const name = document.getElementById('product-name').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
@@ -142,6 +142,57 @@ function renderProducts() {
       </td>`;
     list.appendChild(tr);
   });
+}
+
+// Импорт товаров из CSV
+function importProductsFromCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const csvText = e.target.result;
+    importProductsFromCSVText(csvText);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function importProductsFromCSVText(csvText) {
+  const products = getProducts();
+  const lines = csvText.trim().split('\n');
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // Пропускаем заголовок, если он похож на name,price
+    if (i === 0 && line.toLowerCase().startsWith('name,')) continue;
+
+    const parts = line.split(',');
+    if (parts.length < 2) continue;
+
+    const name = parts[0].trim();
+    const priceStr = parts[1].trim();
+    const price = parseFloat(priceStr);
+
+    if (!name || isNaN(price)) continue;
+
+    const existingIdx = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+
+    if (existingIdx >= 0) {
+      products[existingIdx].price = price;
+      updatedCount++;
+    } else {
+      products.push({ id: Date.now() + addedCount, name, price });
+      addedCount++;
+    }
+  }
+
+  saveProducts(products);
+  renderProducts();
+  alert(`Готово: добавлено ${addedCount} новых товаров, обновлено цен у ${updatedCount} товаров.`);
 }
 
 // --- ЗАКАЗЫ ---
@@ -208,6 +259,10 @@ function showOrderDetails(id) {
     (order.direction ? `<p><strong>Направление:</strong> ${order.direction}</p>` : '');
 
   document.getElementById('order-details-modal').style.display = 'flex';
+}
+
+function closeOrderDetails() {
+  document.getElementById('order-details-modal').style.display = 'none';
 }
 
 function deleteOrder(id) {
@@ -332,7 +387,8 @@ function saveOrder() {
       productId: product.id,
       productName: product.name,
       qty,
-      price: product.price,
+      price: product.
+            price: product.price,
       total: lineTotal
     });
   });
@@ -340,6 +396,7 @@ function saveOrder() {
   if (items.length === 0) return alert('Добавьте хотя бы одну позицию в заказ');
 
   const orders = getOrders();
+  const now = new Date().toISOString().slice(0, 10);
 
   if (window.editingOrderId !== undefined) {
     const idx = orders.findIndex(o => o.id === window.editingOrderId);
@@ -351,7 +408,7 @@ function saveOrder() {
         direction,
         items,
         total,
-        date: new Date().toLocaleDateString('ru-RU')
+        date: now
       };
       delete window.editingOrderId;
     }
@@ -361,167 +418,65 @@ function saveOrder() {
       clientId,
       clientName: client.name,
       direction,
-      date: new Date().toLocaleDateString('ru-RU'),
       items,
       total,
-      status: 'new'
+      date: now,
+      status: 'Новый'
     });
   }
 
   saveOrders(orders);
   alert('Заказ сохранён!');
   showSection('orders');
+  renderOrders();
 }
 
-// --- ПРОФИЛЬ КЛИЕНТА: ПОДРОБНЫЙ КАЛЕНДАРЬ С ТОВАРАМИ ---
+// --- ПРОФИЛЬ КЛИЕНТА (КАЛЕНДАРЬ И ИСТОРИЯ) ---
 function renderClientProfile() {
   const clientId = window.viewingClientId;
   const client = getClients().find(c => c.id === clientId);
-  if (!client) {
-    alert('Клиент не найден');
-    showSection('clients');
-    return;
+  if (!client) return;
+
+  const container = document.getElementById('client-profile-content');
+  const allOrders = getOrders();
+
+  // Заказы этого клиента
+  const clientOrders = allOrders.filter(o => o.clientId === clientId).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  let ordersHtml = '';
+  if (clientOrders.length === 0) {
+    ordersHtml = '<p>Заказов пока нет</p>';
+  } else {
+    clientOrders.forEach(o => {
+      const itemsText = o.items.map(i => `${i.qty}×${i.productName}`).join(', ');
+      ordersHtml += `
+        <div style="border:1px solid #ccc; padding:8px; margin-bottom:8px; border-radius:4px;">
+          <strong>${o.date}</strong> — ${o.direction || ''} — ${o.status}<br>
+          ${itemsText}<br>
+          <span style="font-weight:bold;">Итого: ${o.total.toFixed(2)} ₽</span>
+        </div>`;
+    });
   }
 
-  document.getElementById('client-profile-name').textContent = client.name;
-  document.getElementById('client-profile-address').textContent = client.address;
-  document.getElementById('client-profile-id').textContent = client.id;
-
-  const orders = getOrders()
-    .filter(o => o.clientId == clientId)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  // Заполняем историю заказов
-  const historyBody = document.getElementById('client-orders-history');
-  historyBody.innerHTML = '';
-  orders.forEach(o => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${o.date}</td>
-      <td>${o.direction || '-'}</td>
-      <td>${o.total.toFixed(2)} ₽</td>
-      <td class="status-${o.status}">${o.status}</td>
-      <td>
-        <button class="btn-edit" style="margin-right:4px;" onclick="editOrder(${o.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
-      </td>`;
-    historyBody.appendChild(tr);
+  // Календарь по дням (суммы по датам)
+  const dailyTotals = {};
+  clientOrders.forEach(o => {
+    dailyTotals[o.date] = (dailyTotals[o.date] || 0) + o.total;
   });
 
-  // Подробный календарь по дням: заказы + состав товаров в каждом
-  const calendarBody = document.getElementById('client-calendar-body');
-  calendarBody.innerHTML = '';
-
-  // Группируем заказы по дате
-  const byDate = {};
-  orders.forEach(o => {
-    if (!byDate[o.date]) byDate[o.date] = [];
-    byDate[o.date].push(o);
+  let calendarHtml = '<h4>Календарь (суммы по дням)</h4><table style="width:100%; border-collapse:collapse; margin-top:8px;">';
+  calendarHtml += '<thead><tr><th>Дата</th><th>Сумма</th></tr></thead><tbody>';
+  Object.keys(dailyTotals).sort().forEach(date => {
+    calendarHtml += `<tr><td>${date}</td><td>${dailyTotals[date].toFixed(2)} ₽</td></tr>`;
   });
+  calendarHtml += '</tbody></table>';
 
-  // Сортируем даты от новых к старым
-  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
-
-  dates.forEach(date => {
-    const dayOrders = byDate[date];
-    let dayTotal = 0;
-    const itemsList = []; // плоский список всех товаров за день (для вывода)
-
-    dayOrders.forEach(order => {
-      dayTotal += order.total;
-      order.items.forEach(item => {
-        itemsList.push({
-          date: order.date,
-          orderId: order.id,
-          productName: item.productName,
-          qty: item.qty,
-          price: item.price,
-          lineTotal: item.total
-        });
-      });
-    });
-
-    // Таблица заказов в этот день
-    const ordersTable = document.createElement('table');
-    ordersTable.style.width = '100%';
-    ordersTable.style.borderCollapse = 'collapse';
-    ordersTable.innerHTML = `
-      <thead>
-        <tr style="background:#f8f9fa;">
-          <th>Заказ ID</th>
-          <th>Направление</th>
-          <th>Сумма заказа</th>
-          <th>Статус</th>
-        </tr>
-      </thead>
-      <tbody>`;
-
-    dayOrders.forEach(o => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>#${o.id}</td>
-        <td>${o.direction || '-'}</td>
-        <td>${o.total.toFixed(2)} ₽</td>
-        <td class="status-${o.status}">${o.status}</td>`;
-      ordersTable.querySelector('tbody').appendChild(tr);
-    });
-    ordersTable.innerHTML += '</tbody></table>';
-
-    // Список товаров по всем заказам за день
-    const itemsTable = document.createElement('table');
-    itemsTable.style.width = '100%';
-    itemsTable.style.borderCollapse = 'collapse';
-    itemsTable.innerHTML = `
-      <thead>
-        <tr style="background:#f8f9fa;">
-          <th>Товар</th>
-          <th>Кол-во</th>
-          <th>Цена/шт</th>
-          <th>Сумма строки</th>
-        </tr>
-      </thead>
-      <tbody>`;
-
-    itemsList.forEach(i => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${i.productName}</td>
-        <td>${i.qty}</td>
-        <td>${i.price.toFixed(2)} ₽</td>
-        <td>${i.lineTotal.toFixed(2)} ₽</td>`;
-      itemsTable.querySelector('tbody').appendChild(tr);
-    });
-    itemsTable.innerHTML += '</tbody></table>';
-
-    // Строка дня в основной таблице календаря
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${date}</td>
-      <td style="padding:8px; background:#fafafa;">
-        ${ordersTable.outerHTML}
-      </td>
-      <td style="padding:8px; background:#fafafa;">
-        ${itemsTable.outerHTML}
-      </td>
-      <td><strong>${dayTotal.toFixed(2)} ₽</strong></td>`;
-    calendarBody.appendChild(tr);
-  });
+  container.innerHTML = `
+    <h3>${client.name}</h3>
+    <p><strong>Адрес:</strong> ${client.address}</p>
+    ${calendarHtml}
+    <h4>Последние заказы</h4>
+    ${ordersHtml}
+    <button onclick="showSection('clients')" style="margin-top:16px;">← Назад к списку клиентов</button>
+  `;
 }
-
-// --- ЗАКРЫТИЕ МОДАЛЬНОГО ОКНА ---
-function closeOrderDetails() {
-  document.getElementById('order-details-modal').style.display = 'none';
-}
-
-// --- ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ ---
-document.addEventListener('DOMContentLoaded', () => {
-  showSection('clients'); // по умолчанию открываем клиентов
-
-  // Закрытие модального окна по клику вне его
-  window.onclick = function(event) {
-    const modal = document.getElementById('order-details-modal');
-    if (event.target === modal) {
-      modal.style.display = 'none';
-    }
-  };
-});
