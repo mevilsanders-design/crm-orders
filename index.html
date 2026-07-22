@@ -102,6 +102,18 @@
   <div id="orders" class="section">
     <h2>Заказы</h2>
 
+    <!-- Фильтр по направлению -->
+    <div style="margin-bottom:10px;">
+      <label><strong>Фильтр по направлению:</strong></label>
+      <select id="filter-direction" style="padding:6px; margin-left:8px;">
+        <option value="">Все направления</option>
+        <option value="Сергач">Сергач</option>
+        <option value="Кстово">Кстово</option>
+        <option value="Арз">Арз</option>
+        <option value="Кнг-Лск">Кнг-Лск</option>
+      </select>
+    </div>
+
     <!-- Общая сумма всех заказов -->
     <div class="total-sum-block">
       <strong>Общая сумма всех заказов:</strong> 
@@ -112,6 +124,7 @@
       <thead>
         <tr>
           <th>№</th>
+          <th>Направление</th>
           <th>Клиент</th>
           <th>Дата</th>
           <th>Сумма</th>
@@ -129,6 +142,16 @@
     <h2>Новый заказ</h2>
     <label>Клиент:</label>
     <select id="order-client"></select>
+
+    <br><br>
+    <label>Направление:</label>
+    <select id="order-direction" style="padding:6px;">
+      <option value="Сергач">Сергач</option>
+      <option value="Кстово">Кстово</option>
+      <option value="Арз">Арз</option>
+      <option value="Кнг-Лск">Кнг-Лск</option>
+    </select>
+
     <hr />
     <h3>Состав заказа</h3>
     <div id="order-items"></div>
