@@ -84,7 +84,7 @@
     <!-- Секция: Новый/редактирование заказа -->
     <section id="create-order" class="section">
       <h3 id="create-order-title">Новый заказ</h3>
-      <div class="form-card" style="display:flex; flex-wrap:wrap; gap:12px;">
+      <div class="form-card" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
         <div style="flex:1; min-width:200px;">
           <label>Клиент</label>
           <select id="order-client"></select>
@@ -100,14 +100,24 @@
         </div>
       </div>
 
+      <!-- Быстрый поиск товара для заказа -->
+      <div class="form-card" style="background:#f8f9fa; padding:12px; border-radius:6px; margin-bottom:12px;">
+        <label>Быстрый поиск товара для заказа</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="quick-product-search" placeholder="Начните вводить название товара..." style="flex:1; min-width:200px;" />
+          <button onclick="addQuickProduct()" class="btn-primary" style="white-space:nowrap;">+ Добавить</button>
+        </div>
+        <small style="color:#666; margin-top:4px;">Начните печатать — появятся подсказки. Кликните по товару или нажмите «+ Добавить».</small>
+      </div>
+
       <h4>Состав заказа</h4>
       <div id="order-items"></div>
-      <button onclick="addOrderItemRow()" class="btn-secondary" style="margin-top:8px;">+ Добавить позицию</button>
+      <button onclick="addOrderItemRow()" class="btn-secondary" style="margin-top:8px;">+ Добавить позицию вручную</button>
 
-      <button onclick="saveOrder()" class="btn-primary" style="margin-top:16px;">Сохранить заказ</button>
+      <button onclick="saveOrder()" class="btn-primary" style="margin-top:16px; width:100%; font-size:16px;">Сохранить заказ</button>
     </section>
 
-    <!-- Секция: Профиль клиента (история + подробный календарь) -->
+    <!-- Секция: Профиль клиента -->
     <section id="client-profile" class="section">
       <a href="#" onclick="showSection('clients');return false;" style="color:#007bff;">← Назад к клиентам</a>
       <h3 id="client-profile-name"></h3>
