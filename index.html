@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <!-- Важно для iPhone: чтобы не зумилось и выглядело как приложение -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>CRM: Торговый представитель</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
+    
+    /* Навигация (боковая панель) */
+    nav { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    nav button { padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; text-align: left; }
+    nav button:hover { background: #0056b3; }
+
+    /* Секции */
+    .section { display: none; }
+    .active { display: block; }
+
+    /* Папки/Направления */
+    .folder-list { list-style: none; padding: 0; }
+    .folder-item { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+    .folder-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; }
+    .folder-content { display: none; margin-top: 10px; padding-left: 15px; border-left: 3px solid #007bff; }
+    .folder-content.open { display: block; }
+
+    /* Таблицы */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f1f1f1; }
+
+    /* Формы */
+    input, select { padding: 8px; margin-right: 8px; width: auto; }
+    button.action { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    button.del { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    button.edit { background: #ffc107; color: black; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+
+    /* Статусы */
+    .status-new { color: #007bff; font-weight: bold; }
+    .status-sent { color: #28a745; font-weight: bold; }
+    .status-confirmed { color: #ffc107; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>CRM: Маршруты</h1>
+
+  <!-- Боковая панель навигации -->
+  <nav>
+    <button onclick="showSection('folders')">Направления (Папки)</button>
+    <button onclick="showSection('products')">Товары</button>
+    <button onclick="showSection('orders')">Заказы</button>
+    <button onclick="showSection('create-order')">Новый заказ</button>
+  </nav>
+
+  <!-- Секция: Папки и Клиенты -->
+  <div id="folders" class="section active">
+    <h2>Направления и клиенты</h2>
+    <p>Выберите направление, чтобы увидеть клиентов.</p>
+    
+    <ul class="folder-list" id="folders-container">
+      <!-- Сюда JS добавит папки -->
+    </ul>
+
+    <hr>
+    <h3>Добавить клиента в папку</h3>
+    <select id="new-client-folder">
+      <option value="Сергач">Сергач</option>
+      <option value="Кстово">Кстово</option>
+      <option value="Арз">Арз</option>
+      <option value="ЛСК-КНГ">ЛСК-КНГ</option>
+    </select>
+    <input id="new-client-name" placeholder="Название клиента" />
+    <input id="new-client-address" placeholder="Адрес" />
+    <button class="action" onclick="addClient()">Добавить клиента</button>
+  </div>
+
+  <!-- Секция: Товары -->
+  <div id="products" class="section">
+    <h2>Товары (прайс)</h2>
+    <input id="product-name" placeholder="Наименование товара" />
+    <input id="product-price" type="number" step="0.01" placeholder="Цена" />
+    <button class="action" onclick="addProduct()">Добавить товар</button>
+    <table>
+      <thead><tr><th>Товар</th><th>Цена</th><th>Действия</th></tr></thead>
+      <tbody id="products-list"></tbody>
+    </table>
+  </div>
+
+  <!-- Секция: Заказы (список) -->
+  <div id="orders" class="section">
+    <h2>Список заказов</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>Клиент</th>
+          <th>Направление</th>
+          <th>Дата</th>
+          <th>Сумма</th>
+          <th>Статус</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody id="orders-list"></tbody>
+    </table>
+  </div>
+
+  <!-- Секция: Новый заказ -->
+  <div id="create-order" class="section">
+    <h2 id="order-form-title">Новый заказ</h2>
+    
+    <label>Выберите клиента:</label>
+    <select id="order-client" onchange="filterClientByFolder()">
+      <option value="">-- сначала выберите папку --</option>
+    </select>
+    <!-- Фильтр по папкам для клиента -->
+    <select id="order-folder" onchange="updateClientSelect()">
+       <option value="" selected>Все направления</option>
+       <option value="Сергач">Сергач</option>
+       <option value="Кстово">Кстово</option>
+       <option value="Арз">Арз</option>
+       <option value="ЛСК-КНГ">ЛСК-КНГ</option>
+    </select>
+
+    <hr>
+    <div id="order-items"></div>
+    <button class="action" style="background:#007bff" onclick="addOrderItemRow()">+ Добавить позицию</button>
+    <hr>
+    
+    <label>Статус заказа:
+      <select id="order-status">
+        <option value="new" class="status-new">Новый</option>
+        <option value="sent" class="status-sent">Отправлен</option>
+        <option value="confirmed" class="status-confirmed">Подтверждён</option>
+      </select>
+    </label>
+
+    <br><br>
+    <button class="action" style="padding:12px 24px; font-size:16px" onclick="saveOrder()">Сохранить заказ</button>
+    <button onclick="showSection('orders')" style="margin-left:10px">Отмена</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
