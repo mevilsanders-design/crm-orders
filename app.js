@@ -1,10 +1,7 @@
-// --- Инициализация хранилища ---
-function initStorage() {
-  if (!localStorage.getItem('crm-clients')) localStorage.setItem('crm-clients', JSON.stringify([]));
-  if (!localStorage.getItem('crm-products')) localStorage.setItem('crm-products', JSON.stringify([]));
-  if (!localStorage.getItem('crm-orders')) localStorage.setItem('crm-orders', JSON.stringify([]));
-}
-initStorage();
+// Инициализация данных
+if (!localStorage.getItem('crm-clients')) localStorage.setItem('crm-clients', JSON.stringify([]));
+if (!localStorage.getItem('crm-products')) localStorage.setItem('crm-products', JSON.stringify([]));
+if (!localStorage.getItem('crm-orders')) localStorage.setItem('crm-orders', JSON.stringify([]));
 
 function getClients() { return JSON.parse(localStorage.getItem('crm-clients')); }
 function getProducts() { return JSON.parse(localStorage.getItem('crm-products')); }
@@ -14,117 +11,124 @@ function saveClients(arr) { localStorage.setItem('crm-clients', JSON.stringify(a
 function saveProducts(arr) { localStorage.setItem('crm-products', JSON.stringify(arr)); }
 function saveOrders(arr) { localStorage.setItem('crm-orders', JSON.stringify(arr)); }
 
-let editingOrderId = null;
-
-// --- Переключение вкладок ---
+// Переключение секций
 function showSection(id) {
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('active');
-
-  if (id === 'folders') renderFolders();
+  document.getElementById(id).classList.add('active');
+  if (id === 'clients') renderClients();
   if (id === 'products') renderProducts();
   if (id === 'orders') renderOrders();
-  if (id === 'create-order') {
-    renderCreateOrder();
-    document.getElementById('order-form-title').textContent = editingOrderId ? 'Редактирование заказа' : 'Новый заказ';
-  }
+  if (id === 'create-order') renderCreateOrder();
 }
 
-// --- ЛОГИКА ПАПОК (НАПРАВЛЕНИЙ) ---
-const folders = ['Сергач', 'Кстово', 'Арз', 'ЛСК-КНГ'];
-
-function renderFolders() {
-  const container = document.getElementById('folders-container');
-  container.innerHTML = '';
-  
-  folders.forEach(folderName => {
-    const clients = getClients().filter(c => c.folder === folderName);
-    
-    const li = document.createElement('li');
-    li.className = 'folder-item';
-    
-    // Заголовок папки (с количеством клиентов)
-    li.innerHTML = `
-      <div class="folder-header" onclick="toggleFolder('${folderName}')">
-        📁 ${folderName} <span style="font-size:0.8em; color:#666">(клиентов: ${clients.length})</span>
-        <span id="arrow-${folderName}" style="font-weight:normal">▼</span>
-      </div>
-      <div id="content-${folderName}" class="folder-content">
-        <table style="width:100%">
-          <thead><tr><th>Клиент</th><th>Адрес</th><th>Действия</th></tr></thead>
-          <tbody id="clients-${folderName}-list"></tbody>
-        </table>
-      </div>
-    `;
-    container.appendChild(li);
-
-    // Рендерим клиентов внутри папки
-    const tbody = document.getElementById(`clients-${folderName}-list`);
-    tbody.innerHTML = '';
-    clients.forEach(c => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${c.name}</td>
-        <td>${c.address}</td>
-        <td><button class="del" onclick="deleteClient(${c.id})">Удалить</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
-  });
-}
-
-function toggleFolder(name) {
-  const content = document.getElementById(`content-${name}`);
-  const arrow = document.getElementById(`arrow-${name}`);
-  if (content.classList.contains('open')) {
-    content.classList.remove('open');
-    arrow.textContent = '▼';
-  } else {
-    content.classList.add('open');
-    arrow.textContent = '▲';
-  }
-}
-
-// Добавление клиента с привязкой к папке
+// --- КЛИЕНТЫ: добавить, удалить, редактировать ---
 function addClient() {
-  const folder = document.getElementById('new-client-folder').value;
-  const name = document.getElementById('new-client-name').value.trim();
-  const address = document.getElementById('new-client-address').value.trim();
-  
-  if (!name) return alert('Введите название клиента');
-  
+  const name = document.getElementById('client-name').value.trim();
+  const address = document.getElementById('client-address').value.trim();
+  if (!name) return alert('Укажите название клиента');
   const clients = getClients();
-  clients.push({ id: Date.now(), name, address, folder });
+  clients.push({ id: Date.now(), name, address });
   saveClients(clients);
-  
-  // Очистка полей
-  document.getElementById('new-client-name').value = '';
-  document.getElementById('new-client-address').value = '';
-  renderFolders(); // Перерисовать папки
+  document.getElementById('client-name').value = '';
+  document.getElementById('client-address').value = '';
+  renderClients();
 }
 
 function deleteClient(id) {
-  if(!confirm('Удалить клиента?')) return;
-  const clients = getClients().filter(c => c.id != id);
+  if (!confirm('Удалить клиента?')) return;
+  const clients = getClients().filter(c => c.id !== id);
   saveClients(clients);
-  renderFolders();
+  renderClients();
 }
 
-// --- ТОВАРЫ ---
+function editClient(id) {
+  const client = getClients().find(c => c.id === id);
+  if (!client) return;
+  document.getElementById('client-name').value = client.name;
+  document.getElementById('client-address').value = client.address;
+  // Удаляем старую запись и сразу добавляем обновлённую (простой способ без отдельного режима «редактирования»)
+  const clients = getClients().filter(c => c.id !== id);
+  // Помечаем, что мы в режиме обновления этого ID
+  window.currentClientId = id;
+  alert('Измените данные и нажмите «Добавить клиента» — запись обновится');
+}
+
+// При добавлении проверяем, не в режиме ли редактирования
+function addClientWithCheck() {
+  const name = document.getElementById('client-name').value.trim();
+  const address = document.getElementById('client-address').value.trim();
+  if (!name) return alert('Укажите название клиента');
+
+  const clients = getClients();
+  if (window.currentClientId !== undefined) {
+    // Обновляем существующую
+    const idx = clients.findIndex(c => c.id === window.currentClientId);
+    if (idx >= 0) {
+      clients[idx] = { ...clients[idx], name, address };
+      delete window.currentClientId;
+    }
+  } else {
+    clients.push({ id: Date.now(), name, address });
+  }
+  saveClients(clients);
+  document.getElementById('client-name').value = '';
+  document.getElementById('client-address').value = '';
+  renderClients();
+}
+
+function renderClients() {
+  const list = document.getElementById('clients-list');
+  list.innerHTML = '';
+  getClients().forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.name}</td>
+      <td>${c.address}</td>
+      <td>
+        <button onclick="editClient(${c.id})" style="padding:4px 8px;margin-right:4px;">Изменить</button>
+        <button onclick="deleteClient(${c.id})" style="padding:4px 8px;color:red;">Удалить</button>
+      </td>`;
+    list.appendChild(tr);
+  });
+}
+
+
+// --- ТОВАРЫ: добавить, удалить, редактировать ---
 function addProduct() {
   const name = document.getElementById('product-name').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
-  if (!name || isNaN(price)) return alert('Заполните название и цену');
-  
+  if (!name || isNaN(price)) return alert('Заполните название и цену товара');
   const products = getProducts();
-  products.push({ id: Date.now(), name, price });
+
+  if (window.currentProductId !== undefined) {
+    const idx = products.findIndex(p => p.id === window.currentProductId);
+    if (idx >= 0) {
+      products[idx] = { ...products[idx], name, price };
+      delete window.currentProductId;
+    }
+  } else {
+    products.push({ id: Date.now(), name, price });
+  }
   saveProducts(products);
-  
   document.getElementById('product-name').value = '';
   document.getElementById('product-price').value = '';
   renderProducts();
+}
+
+function deleteProduct(id) {
+  if (!confirm('Удалить товар?')) return;
+  const products = getProducts().filter(p => p.id !== id);
+  saveProducts(products);
+  renderProducts();
+}
+
+function editProduct(id) {
+  const product = getProducts().find(p => p.id === id);
+  if (!product) return;
+  document.getElementById('product-name').value = product.name;
+  document.getElementById('product-price').value = product.price;
+  window.currentProductId = id;
+  alert('Измените данные и нажмите «Добавить товар» — запись обновится');
 }
 
 function renderProducts() {
@@ -132,75 +136,109 @@ function renderProducts() {
   list.innerHTML = '';
   getProducts().forEach(p => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${p.name}</td><td>${p.price.toFixed(2)} ₽</td><td><button class="del" onclick="deleteProduct(${p.id})">Удалить</button></td>`;
+    tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.price.toFixed(2)} ₽</td>
+      <td>
+        <button onclick="editProduct(${p.id})" style="padding:4px 8px;margin-right:4px;">Изменить</button>
+        <button onclick="deleteProduct(${p.id})" style="padding:4px 8px;color:red;">Удалить</button>
+      </td>`;
     list.appendChild(tr);
   });
 }
 
-function deleteProduct(id) {
-  if(!confirm('Удалить товар?')) return;
-  const products = getProducts().filter(p => p.id != id);
-  saveProducts(products);
-  renderProducts();
+
+// --- ЗАКАЗЫ: удалить (редактирование заказов лучше делать через создание нового или отдельный экран) ---
+function deleteOrder(id) {
+  if (!confirm('Удалить заказ?')) return;
+  const orders = getOrders().filter(o => o.id !== id);
+  saveOrders(orders);
+  renderOrders();
 }
 
-// --- ЗАКАЗЫ ---
-function updateClientSelect() {
-  const select = document.getElementById('order-client');
-  const folderFilter = document.getElementById('order-folder').value;
-  
-  select.innerHTML = '<option value="">-- выберите клиента --</option>';
-  const allClients = getClients();
-  
-  allClients.forEach(client => {
-    // Если выбран фильтр папки, показываем только тех, кто в ней
-    if (folderFilter && client.folder !== folderFilter) return;
-    
-    const opt = document.createElement('option');
-    opt.value = client.id;
-    opt.textContent = `${client.name} (${client.folder})`;
-    select.appendChild(opt);
+function renderOrders() {
+  const list = document.getElementById('orders-list');
+  list.innerHTML = '';
+  getOrders().forEach((o, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${o.clientName}</td>
+      <td>${o.date}</td>
+      <td>${o.total.toFixed(2)} ₽</td>
+      <td class="status-${o.status}">${o.status}</td>
+      <td><button onclick="deleteOrder(${o.id})" style="color:red;padding:4px 8px;">Удалить</button></td>`;
+    list.appendChild(tr);
   });
 }
 
-function filterClientByFolder() {
-  updateClientSelect();
-}
-
+// Новый заказ (интерфейс)
 function renderCreateOrder() {
-  editingOrderId = null;
-  document.getElementById('order-form-title').textContent = 'Новый заказ';
-  document.getElementById('order-items').innerHTML = '';
-  addOrderItemRow(); // Добавляем одну пустую строку
-  updateClientSelect(); // Заполняем список клиентов
+  const select = document.getElementById('order-client');
+  select.innerHTML = '';
+  getClients().forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    select.appendChild(opt);
+  });
+  addOrderItemRow();
 }
 
-function createOrderItemRow(productId = '', qty = 1) {
+function addOrderItemRow() {
+  const container = document.getElementById('order-items');
   const row = document.createElement('div');
-  row.style.marginBottom = '8px';
   row.innerHTML = `
     <select class="order-product"></select>
-    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="${qty}" style="width:80px" />
-    <button class="del" onclick="this.parentElement.remove()" style="padding:5px">×</button>
-  `;
-  
+    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" />
+    <button onclick="this.parentElement.remove()" style="color:red">×</button>`;
+  container.appendChild(row);
+
   const products = getProducts();
   const sel = row.querySelector('select');
-  sel.innerHTML = '<option value="">-- товар --</option>';
+  sel.innerHTML = '<option value="">-- выберите товар --</option>';
   products.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
     opt.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
     sel.appendChild(opt);
   });
-  
-  if (productId) sel.value = productId;
-  return row;
-}
-
-function addOrderItemRow() {
-  const container = document.getElementById('order-items');
-  container.appendChild(createOrderItemRow());
 }
 
 function saveOrder() {
+  const clientId = document.getElementById('order-client').value;
+  if (!clientId) return alert('Выберите клиента');
+
+  const client = getClients().find(c => c.id == clientId);
+  const rows = document.querySelectorAll('#order-items > div');
+  let total = 0;
+  const items = [];
+
+  rows.forEach(row => {
+    const prodSel = row.querySelector('select');
+    const qtyInput = row.querySelector('.order-qty');
+    if (!prodSel.value || !qtyInput.value) return;
+
+    const product = getProducts().find(p => p.id == prodSel.value);
+    const qty = parseInt(qtyInput.value, 10);
+    const lineTotal = product.price * qty;
+    total += lineTotal;
+    items.push({ productId: product.id, productName: product.name, qty, price: product.price, total: lineTotal });
+  });
+
+  if (items.length === 0) return alert('Добавьте хотя бы одну позицию');
+
+  const orders = getOrders();
+  orders.push({
+    id: Date.now(),
+    clientId,
+    clientName: client.name,
+    date: new Date().toLocaleDateString('ru-RU'),
+    items,
+    total,
+    status: 'new'
+  });
+  saveOrders(orders);
+  alert('Заказ сохранён!');
+  showSection('orders');
+}
