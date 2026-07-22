@@ -22,7 +22,32 @@ function showSection(id) {
   if (id === 'client-profile') renderClientProfile();
 }
 
-// --- КЛИЕНТЫ ---
+// --- КЛИЕНТЫ (с поиском) ---
+function renderClients() {
+  const list = document.getElementById('clients-list');
+  list.innerHTML = '';
+
+  const search = document.getElementById('client-search').value.trim().toLowerCase();
+  const clients = getClients();
+
+  clients.filter(c =>
+    c.name.toLowerCase().includes(search) ||
+    c.address.toLowerCase().includes(search)
+  ).forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.name}</td>
+      <td>${c.address}</td>
+      <td>
+        <button class="btn-edit" onclick="editClient(${c.id})">Изменить</button>
+        <button class="btn-delete" onclick="deleteClient(${c.id})">Удалить</button>
+        <button style="background:#007bff; color:white; padding:4px 8px; margin-left:4px; border-radius:3px;"
+                onclick="openClientProfile(${c.id})">История и календарь</button>
+      </td>`;
+    list.appendChild(tr);
+  });
+}
+
 function addClientWithCheck() {
   const name = document.getElementById('client-name').value.trim();
   const address = document.getElementById('client-address').value.trim();
@@ -57,25 +82,7 @@ function editClient(id) {
   document.getElementById('client-name').value = client.name;
   document.getElementById('client-address').value = client.address;
   window.currentClientId = id;
-  alert('Измените данные и нажмите «Добавить клиента» — запись обновится');
-}
-
-function renderClients() {
-  const list = document.getElementById('clients-list');
-  list.innerHTML = '';
-  getClients().forEach(c => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${c.name}</td>
-      <td>${c.address}</td>
-      <td>
-        <button class="btn-edit" onclick="editClient(${c.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteClient(${c.id})">Удалить</button>
-        <button style="background:#007bff; color:white; padding:4px 8px; margin-left:4px; border-radius:3px;"
-                onclick="openClientProfile(${c.id})">История и календарь</button>
-      </td>`;
-    list.appendChild(tr);
-  });
+  alert('Измените данные и нажмите «Добавить» — запись обновится');
 }
 
 function openClientProfile(clientId) {
@@ -194,13 +201,13 @@ function showOrderDetails(id) {
 
   const container = document.getElementById('order-items-detail');
   container.innerHTML = '<ul style="padding-left:20px;">' +
-    order.items.map(i => `<li>${i.qty} × ${i.productName} — ${(i.price * i.qty).toFixed(2)} ₽</li>`)
+    order.items.map(i => `<li>${i.qty} × ${i.productName} — ${(i.price * i.qty).toFixed(2)} ₽ (${i.price.toFixed(2)} ₽/шт)</li>`)
       .join('') +
     '</ul>' +
     `<p><strong>Итого: ${order.total.toFixed(2)} ₽</strong></p>` +
     (order.direction ? `<p><strong>Направление:</strong> ${order.direction}</p>` : '');
 
-  document.getElementById('order-details-modal').style.display = 'block';
+  document.getElementById('order-details-modal').style.display = 'flex';
 }
 
 function deleteOrder(id) {
@@ -366,7 +373,7 @@ function saveOrder() {
   showSection('orders');
 }
 
-// --- ПРОФИЛЬ КЛИЕНТА: ИСТОРИЯ И КАЛЕНДАРЬ ---
+// --- ПРОФИЛЬ КЛИЕНТА: ПОДРОБНЫЙ КАЛЕНДАРЬ С ТОВАРАМИ ---
 function renderClientProfile() {
   const clientId = window.viewingClientId;
   const client = getClients().find(c => c.id === clientId);
@@ -401,21 +408,103 @@ function renderClientProfile() {
     historyBody.appendChild(tr);
   });
 
-  // Простой «календарь» по дням посещений: считаем, сколько заказов было в каждый день
-  const calendarContainer = document.getElementById('client-calendar-view');
-  calendarContainer.innerHTML = '<h4>Посещения (по датам)</h4><table><thead><tr><th>Дата</th><th>Количество заказов</th></tr></thead><tbody id="client-calendar-body"></tbody></table>';
+  // Подробный календарь по дням: заказы + состав товаров в каждом
   const calendarBody = document.getElementById('client-calendar-body');
+  calendarBody.innerHTML = '';
 
-  const dayCounts = {};
+  // Группируем заказы по дате
+  const byDate = {};
   orders.forEach(o => {
-    const day = o.date; // у нас уже в формате ДД.ММ.ГГГГ
-    dayCounts[day] = (dayCounts[day] || 0) + 1;
+    if (!byDate[o.date]) byDate[o.date] = [];
+    byDate[o.date].push(o);
   });
 
-  Object.keys(dayCounts).sort((a, b) => b.localeCompare(a)).forEach(day => {
-    const row = document.createElement('tr');
-    row.innerHTML = `<td>${day}</td><td>${dayCounts[day]}</td>`;
-    calendarBody.appendChild(row);
+  // Сортируем даты от новых к старым
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+  dates.forEach(date => {
+    const dayOrders = byDate[date];
+    let dayTotal = 0;
+    const itemsList = []; // плоский список всех товаров за день (для вывода)
+
+    dayOrders.forEach(order => {
+      dayTotal += order.total;
+      order.items.forEach(item => {
+        itemsList.push({
+          date: order.date,
+          orderId: order.id,
+          productName: item.productName,
+          qty: item.qty,
+          price: item.price,
+          lineTotal: item.total
+        });
+      });
+    });
+
+    // Таблица заказов в этот день
+    const ordersTable = document.createElement('table');
+    ordersTable.style.width = '100%';
+    ordersTable.style.borderCollapse = 'collapse';
+    ordersTable.innerHTML = `
+      <thead>
+        <tr style="background:#f8f9fa;">
+          <th>Заказ ID</th>
+          <th>Направление</th>
+          <th>Сумма заказа</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    dayOrders.forEach(o => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>#${o.id}</td>
+        <td>${o.direction || '-'}</td>
+        <td>${o.total.toFixed(2)} ₽</td>
+        <td class="status-${o.status}">${o.status}</td>`;
+      ordersTable.querySelector('tbody').appendChild(tr);
+    });
+    ordersTable.innerHTML += '</tbody></table>';
+
+    // Список товаров по всем заказам за день
+    const itemsTable = document.createElement('table');
+    itemsTable.style.width = '100%';
+    itemsTable.style.borderCollapse = 'collapse';
+    itemsTable.innerHTML = `
+      <thead>
+        <tr style="background:#f8f9fa;">
+          <th>Товар</th>
+          <th>Кол-во</th>
+          <th>Цена/шт</th>
+          <th>Сумма строки</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    itemsList.forEach(i => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i.productName}</td>
+        <td>${i.qty}</td>
+        <td>${i.price.toFixed(2)} ₽</td>
+        <td>${i.lineTotal.toFixed(2)} ₽</td>`;
+      itemsTable.querySelector('tbody').appendChild(tr);
+    });
+    itemsTable.innerHTML += '</tbody></table>';
+
+    // Строка дня в основной таблице календаря
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${date}</td>
+      <td style="padding:8px; background:#fafafa;">
+        ${ordersTable.outerHTML}
+      </td>
+      <td style="padding:8px; background:#fafafa;">
+        ${itemsTable.outerHTML}
+      </td>
+      <td><strong>${dayTotal.toFixed(2)} ₽</strong></td>`;
+    calendarBody.appendChild(tr);
   });
 }
 
@@ -426,8 +515,7 @@ function closeOrderDetails() {
 
 // --- ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ ---
 document.addEventListener('DOMContentLoaded', () => {
-  // По умолчанию показываем список клиентов
-  showSection('clients');
+  showSection('clients'); // по умолчанию открываем клиентов
 
   // Закрытие модального окна по клику вне его
   window.onclick = function(event) {
