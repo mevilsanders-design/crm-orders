@@ -135,8 +135,7 @@ function formatOrderItems(items) {
   return items.map(i => `${i.qty} × ${i.productName} (${i.price.toFixed(2)} ₽)`).join('<br>');
 }
 
-function calculateTotalOrdersSum() {
-  const orders = getOrders();
+function calculateTotalOrdersSum(orders) {
   return orders.reduce((sum, o) => sum + o.total, 0);
 }
 
@@ -144,17 +143,27 @@ function renderOrders() {
   const list = document.getElementById('orders-list');
   list.innerHTML = '';
 
-  // Обновляем общую сумму
-  const totalSum = calculateTotalOrdersSum();
+  // Получаем фильтр
+  const filter = document.getElementById('filter-direction').value;
+  const allOrders = getOrders();
+
+  // Фильтруем
+  const filteredOrders = filter
+    ? allOrders.filter(o => o.direction === filter)
+    : allOrders;
+
+  // Считаем и показываем общую сумму (по отфильтрованным или всем)
+  const totalSum = calculateTotalOrdersSum(filteredOrders);
   document.getElementById('total-orders-sum').textContent = totalSum.toFixed(2) + ' ₽';
 
-  getOrders().forEach((o, idx) => {
+  filteredOrders.forEach((o, idx) => {
     const shortText = o.items.map(i => `${i.qty}×${i.productName}`).join(', ');
     const fullText = formatOrderItems(o.items).replace(/<br>/g, '\n');
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${idx + 1}</td>
+      <td>${o.direction || '-'}</td>
       <td>${o.clientName}</td>
       <td>${o.date}</td>
       <td>${o.total.toFixed(2)} ₽</td>
@@ -182,7 +191,8 @@ function showOrderDetails(id) {
     order.items.map(i => `<li>${i.qty} × ${i.productName} — ${(i.price * i.qty).toFixed(2)} ₽</li>`)
       .join('') +
     '</ul>' +
-    `<p><strong>Итого: ${order.total.toFixed(2)} ₽</strong></p>`;
+    `<p><strong>Итого: ${order.total.toFixed(2)} ₽</strong></p>` +
+    (order.direction ? `<p><strong>Направление:</strong> ${order.direction}</p>` : '');
 
   document.getElementById('order-details-modal').style.display = 'block';
 }
@@ -211,8 +221,8 @@ function renderCreateOrder() {
   }
 
   const itemsContainer = document.getElementById('order-items');
-  itemsContainer.innerHTML = ''; // очищаем перед перерисовкой
-  addOrderItemRow(); // добавляем одну пустую строку
+  itemsContainer.innerHTML = '';
+  addOrderItemRow();
 }
 
 function addOrderItemRow() {
@@ -237,7 +247,9 @@ function addOrderItemRow() {
 
 function saveOrder() {
   const clientId = document.getElementById('order-client').value;
+  const direction = document.getElementById('order-direction').value;
   if (!clientId) return alert('Выберите клиента');
+  if (!direction) return alert('Выберите направление');
 
   const client = getClients().find(c => c.id == clientId);
   const rows = document.querySelectorAll('#order-items > div');
@@ -269,6 +281,7 @@ function saveOrder() {
     id: Date.now(),
     clientId,
     clientName: client.name,
+    direction,
     date: new Date().toLocaleDateString('ru-RU'),
     items,
     total,
