@@ -135,18 +135,16 @@ function formatOrderItems(items) {
   return items.map(i => `${i.qty} × ${i.productName} (${i.price.toFixed(2)} ₽)`).join('<br>');
 }
 
-// Функция: посчитать общую сумму всех заказов
 function calculateTotalOrdersSum() {
   const orders = getOrders();
   return orders.reduce((sum, o) => sum + o.total, 0);
 }
 
-// Обновлённая renderOrders — теперь она ставит общую сумму в поле
 function renderOrders() {
   const list = document.getElementById('orders-list');
   list.innerHTML = '';
 
-  // Считаем и показываем общую сумму
+  // Обновляем общую сумму
   const totalSum = calculateTotalOrdersSum();
   document.getElementById('total-orders-sum').textContent = totalSum.toFixed(2) + ' ₽';
 
@@ -193,9 +191,90 @@ function deleteOrder(id) {
   if (!confirm('Удалить заказ?')) return;
   const orders = getOrders().filter(o => o.id !== id);
   saveOrders(orders);
-  renderOrders(); // перерисовываем и обновляем общую сумму
+  renderOrders();
 }
 
 // Новый заказ (интерфейс)
 function renderCreateOrder() {
   const select = document.getElementById('order-client');
+  select.innerHTML = '';
+  const clients = getClients();
+  if (clients.length === 0) {
+    select.innerHTML = '<option value="">Нет клиентов — добавьте сначала</option>';
+  } else {
+    clients.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      select.appendChild(opt);
+    });
+  }
+
+  const itemsContainer = document.getElementById('order-items');
+  itemsContainer.innerHTML = ''; // очищаем перед перерисовкой
+  addOrderItemRow(); // добавляем одну пустую строку
+}
+
+function addOrderItemRow() {
+  const container = document.getElementById('order-items');
+  const row = document.createElement('div');
+  row.innerHTML = `
+    <select class="order-product"></select>
+    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" />
+    <button onclick="this.parentElement.remove()" style="color:red;">×</button>`;
+  container.appendChild(row);
+
+  const products = getProducts();
+  const sel = row.querySelector('select');
+  sel.innerHTML = '<option value="">-- выберите товар --</option>';
+  products.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
+    sel.appendChild(opt);
+  });
+}
+
+function saveOrder() {
+  const clientId = document.getElementById('order-client').value;
+  if (!clientId) return alert('Выберите клиента');
+
+  const client = getClients().find(c => c.id == clientId);
+  const rows = document.querySelectorAll('#order-items > div');
+  let total = 0;
+  const items = [];
+
+  rows.forEach(row => {
+    const prodSel = row.querySelector('select');
+    const qtyInput = row.querySelector('.order-qty');
+    if (!prodSel.value || !qtyInput.value) return;
+
+    const product = getProducts().find(p => p.id == prodSel.value);
+    const qty = parseInt(qtyInput.value, 10);
+    const lineTotal = product.price * qty;
+    total += lineTotal;
+    items.push({
+      productId: product.id,
+      productName: product.name,
+      qty,
+      price: product.price,
+      total: lineTotal
+    });
+  });
+
+  if (items.length === 0) return alert('Добавьте хотя бы одну позицию в заказ');
+
+  const orders = getOrders();
+  orders.push({
+    id: Date.now(),
+    clientId,
+    clientName: client.name,
+    date: new Date().toLocaleDateString('ru-RU'),
+    items,
+    total,
+    status: 'new'
+  });
+  saveOrders(orders);
+  alert('Заказ сохранён!');
+  showSection('orders');
+}
