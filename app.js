@@ -58,7 +58,6 @@ function addClientWithCheck() {
     const idx = clients.findIndex(c => c.id === window.currentClientId);
     if (idx >= 0) {
       clients[idx] = { ...clients[idx], name, address };
-      delete window.currentClient
       delete window.currentClientId;
     }
   } else {
@@ -372,7 +371,8 @@ function renderCreateOrder() {
 
         const products = getProducts();
         const sel = row.querySelector('select');
-        sel.innerHTML = '<option value="">-- выберите товар --</option>';
+        sel.innerHTML = '<option value="">--
+          <option value="">-- выберите товар --</option>`;
         products.forEach(p => {
           const opt = document.createElement('option');
           opt.value = p.id;
@@ -381,8 +381,11 @@ function renderCreateOrder() {
           sel.appendChild(opt);
         });
 
+        // ВАЖНО: вешаем слушатели, чтобы сумма обновлялась при редактировании
+        sel.addEventListener('change', () => updateRowTotal(row));
         const qtyInput = row.querySelector('.order-qty');
         qtyInput.addEventListener('input', () => updateRowTotal(row));
+
         updateRowTotal(row);
       });
     } else {
@@ -427,6 +430,11 @@ function saveOrder() {
   if (!direction) return alert('Выберите направление');
 
   const client = getClients().find(c => c.id == clientId);
+  if (!client) {
+    alert('Клиент не найден — обновите страницу и выберите клиента заново.');
+    return;
+  }
+
   const rows = document.querySelectorAll('#order-items > div');
   let total = 0;
   const items = [];
@@ -437,6 +445,8 @@ function saveOrder() {
     if (!prodSel.value || !qtyInput.value) return;
 
     const product = getProducts().find(p => p.id == prodSel.value);
+    if (!product) return; // защита от битых данных
+
     const qty = parseInt(qtyInput.value, 10);
     const lineTotal = product.price * qty;
     total += lineTotal;
@@ -451,8 +461,8 @@ function saveOrder() {
 
   if (items.length === 0) return alert('Добавьте хотя бы одну позицию в заказ');
 
-  const
   const orders = getOrders();
+  const date = new Date().toISOString().split('T')[0]; // формат YYYY-MM-DD для корректной сортировки
 
   if (window.editingOrderId !== undefined) {
     const idx = orders.findIndex(o => o.id === window.editingOrderId);
@@ -464,7 +474,7 @@ function saveOrder() {
         direction,
         items,
         total,
-        date: new Date().toLocaleDateString('ru-RU')
+        date
       };
       delete window.editingOrderId;
     }
@@ -474,7 +484,7 @@ function saveOrder() {
       clientId,
       clientName: client.name,
       direction,
-      date: new Date().toLocaleDateString('ru-RU'),
+      date,
       items,
       total,
       status: 'new'
@@ -502,7 +512,7 @@ function renderClientProfile() {
 
   const orders = getOrders()
     .filter(o => o.clientId == clientId)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => b.date.localeCompare(a.date)); // сортировка по YYYY-MM-DD
 
   // История заказов
   const historyBody = document.getElementById('client-orders-history');
@@ -605,6 +615,7 @@ function closeOrderDetails() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('CRM started');
   showSection('clients');
   initQuickProductSearch();
 
