@@ -19,6 +19,7 @@ function showSection(id) {
   if (id === 'products') renderProducts();
   if (id === 'orders') renderOrders();
   if (id === 'create-order') renderCreateOrder();
+  if (id === 'client-profile') renderClientProfile();
 }
 
 // --- КЛИЕНТЫ ---
@@ -70,9 +71,16 @@ function renderClients() {
       <td>
         <button class="btn-edit" onclick="editClient(${c.id})">Изменить</button>
         <button class="btn-delete" onclick="deleteClient(${c.id})">Удалить</button>
+        <button style="background:#007bff; color:white; padding:4px 8px; margin-left:4px; border-radius:3px;"
+                onclick="openClientProfile(${c.id})">История и календарь</button>
       </td>`;
     list.appendChild(tr);
   });
+}
+
+function openClientProfile(clientId) {
+  window.viewingClientId = clientId;
+  showSection('client-profile');
 }
 
 // --- ТОВАРЫ ---
@@ -143,16 +151,13 @@ function renderOrders() {
   const list = document.getElementById('orders-list');
   list.innerHTML = '';
 
-  // Получаем фильтр
   const filter = document.getElementById('filter-direction').value;
   const allOrders = getOrders();
 
-  // Фильтруем
   const filteredOrders = filter
     ? allOrders.filter(o => o.direction === filter)
     : allOrders;
 
-  // Считаем и показываем общую сумму (по отфильтрованным или всем)
   const totalSum = calculateTotalOrdersSum(filteredOrders);
   document.getElementById('total-orders-sum').textContent = totalSum.toFixed(2) + ' ₽';
 
@@ -205,16 +210,14 @@ function deleteOrder(id) {
   renderOrders();
 }
 
-// Редактирование заказа
 function editOrder(id) {
   const order = getOrders().find(o => o.id === id);
   if (!order) return;
-
-  window.editingOrderId = order.id; // запоминаем ID редактируемого заказа
+  window.editingOrderId = order.id;
   showSection('create-order');
 }
 
-// Новый заказ / редактирование заказа (интерфейс)
+// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА ---
 function renderCreateOrder() {
   const select = document.getElementById('order-client');
   select.innerHTML = '';
@@ -230,26 +233,25 @@ function renderCreateOrder() {
     });
   }
 
-  // Если редактируем — выбираем нужного клиента и направление
   if (window.editingOrderId !== undefined) {
+    document.getElementById('create-order-title').textContent = 'Редактирование заказа';
     const order = getOrders().find(o => o.id === window.editingOrderId);
     if (order) {
-      // Выбор клиента
       const clientOption = document.querySelector(`#order-client option[value="${order.clientId}"]`);
       if (clientOption) clientOption.selected = true;
 
-      // Выбор направления
       const directionSelect = document.getElementById('order-direction');
       const directionOption = directionSelect.querySelector(`option[value="${order.direction}"]`);
       if (directionOption) directionOption.selected = true;
     }
+  } else {
+    document.getElementById('create-order-title').textContent = 'Новый заказ';
   }
 
   const itemsContainer = document.getElementById('order-items');
   itemsContainer.innerHTML = '';
 
   if (window.editingOrderId !== undefined) {
-    // Заполняем позициями из заказа
     const order = getOrders().find(o => o.id === window.editingOrderId);
     if (order && order.items && order.items.length > 0) {
       order.items.forEach(item => {
@@ -260,7 +262,6 @@ function renderCreateOrder() {
           <button onclick="this.parentElement.remove()" style="color:red;">×</button>`;
         itemsContainer.appendChild(row);
 
-        // Заполняем выпадающий список товаров
         const products = getProducts();
         const sel = row.querySelector('select');
         sel.innerHTML = '<option value="">-- выберите товар --</option>';
@@ -268,13 +269,12 @@ function renderCreateOrder() {
           const opt = document.createElement('option');
           opt.value = p.id;
           opt.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
-          // Выбираем нужный товар, если совпадает
           if (p.id == item.productId) opt.selected = true;
           sel.appendChild(opt);
         });
       });
     } else {
-      addOrderItemRow(); // если позиций нет — добавляем одну пустую
+      addOrderItemRow();
     }
   } else {
     addOrderItemRow();
@@ -335,7 +335,6 @@ function saveOrder() {
   const orders = getOrders();
 
   if (window.editingOrderId !== undefined) {
-    // РЕДАКТИРОВАНИЕ: обновляем существующий заказ
     const idx = orders.findIndex(o => o.id === window.editingOrderId);
     if (idx >= 0) {
       orders[idx] = {
@@ -345,12 +344,11 @@ function saveOrder() {
         direction,
         items,
         total,
-        date: new Date().toLocaleDateString('ru-RU') // дата обновляется при редактировании
+        date: new Date().toLocaleDateString('ru-RU')
       };
-      delete window.editingOrderId; // сбрасываем режим редактирования
+      delete window.editingOrderId;
     }
   } else {
-    // СОЗДАНИЕ: добавляем новый заказ
     orders.push({
       id: Date.now(),
       clientId,
@@ -367,3 +365,75 @@ function saveOrder() {
   alert('Заказ сохранён!');
   showSection('orders');
 }
+
+// --- ПРОФИЛЬ КЛИЕНТА: ИСТОРИЯ И КАЛЕНДАРЬ ---
+function renderClientProfile() {
+  const clientId = window.viewingClientId;
+  const client = getClients().find(c => c.id === clientId);
+  if (!client) {
+    alert('Клиент не найден');
+    showSection('clients');
+    return;
+  }
+
+  document.getElementById('client-profile-name').textContent = client.name;
+  document.getElementById('client-profile-address').textContent = client.address;
+  document.getElementById('client-profile-id').textContent = client.id;
+
+  const orders = getOrders()
+    .filter(o => o.clientId == clientId)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Заполняем историю заказов
+  const historyBody = document.getElementById('client-orders-history');
+  historyBody.innerHTML = '';
+  orders.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${o.date}</td>
+      <td>${o.direction || '-'}</td>
+      <td>${o.total.toFixed(2)} ₽</td>
+      <td class="status-${o.status}">${o.status}</td>
+      <td>
+        <button class="btn-edit" style="margin-right:4px;" onclick="editOrder(${o.id})">Изменить</button>
+        <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
+      </td>`;
+    historyBody.appendChild(tr);
+  });
+
+  // Простой «календарь» по дням посещений: считаем, сколько заказов было в каждый день
+  const calendarContainer = document.getElementById('client-calendar-view');
+  calendarContainer.innerHTML = '<h4>Посещения (по датам)</h4><table><thead><tr><th>Дата</th><th>Количество заказов</th></tr></thead><tbody id="client-calendar-body"></tbody></table>';
+  const calendarBody = document.getElementById('client-calendar-body');
+
+  const dayCounts = {};
+  orders.forEach(o => {
+    const day = o.date; // у нас уже в формате ДД.ММ.ГГГГ
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  });
+
+  Object.keys(dayCounts).sort((a, b) => b.localeCompare(a)).forEach(day => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${day}</td><td>${dayCounts[day]}</td>`;
+    calendarBody.appendChild(row);
+  });
+}
+
+// --- ЗАКРЫТИЕ МОДАЛЬНОГО ОКНА ---
+function closeOrderDetails() {
+  document.getElementById('order-details-modal').style.display = 'none';
+}
+
+// --- ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ ---
+document.addEventListener('DOMContentLoaded', () => {
+  // По умолчанию показываем список клиентов
+  showSection('clients');
+
+  // Закрытие модального окна по клику вне его
+  window.onclick = function(event) {
+    const modal = document.getElementById('order-details-modal');
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  };
+});
