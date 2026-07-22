@@ -21,13 +21,22 @@ function showSection(id) {
   if (id === 'create-order') renderCreateOrder();
 }
 
-// --- КЛИЕНТЫ: добавить, удалить, редактировать ---
-function addClient() {
+// --- КЛИЕНТЫ ---
+function addClientWithCheck() {
   const name = document.getElementById('client-name').value.trim();
   const address = document.getElementById('client-address').value.trim();
   if (!name) return alert('Укажите название клиента');
+
   const clients = getClients();
-  clients.push({ id: Date.now(), name, address });
+  if (window.currentClientId !== undefined) {
+    const idx = clients.findIndex(c => c.id === window.currentClientId);
+    if (idx >= 0) {
+      clients[idx] = { ...clients[idx], name, address };
+      delete window.currentClientId;
+    }
+  } else {
+    clients.push({ id: Date.now(), name, address });
+  }
   saveClients(clients);
   document.getElementById('client-name').value = '';
   document.getElementById('client-address').value = '';
@@ -46,34 +55,8 @@ function editClient(id) {
   if (!client) return;
   document.getElementById('client-name').value = client.name;
   document.getElementById('client-address').value = client.address;
-  // Удаляем старую запись и сразу добавляем обновлённую (простой способ без отдельного режима «редактирования»)
-  const clients = getClients().filter(c => c.id !== id);
-  // Помечаем, что мы в режиме обновления этого ID
   window.currentClientId = id;
   alert('Измените данные и нажмите «Добавить клиента» — запись обновится');
-}
-
-// При добавлении проверяем, не в режиме ли редактирования
-function addClientWithCheck() {
-  const name = document.getElementById('client-name').value.trim();
-  const address = document.getElementById('client-address').value.trim();
-  if (!name) return alert('Укажите название клиента');
-
-  const clients = getClients();
-  if (window.currentClientId !== undefined) {
-    // Обновляем существующую
-    const idx = clients.findIndex(c => c.id === window.currentClientId);
-    if (idx >= 0) {
-      clients[idx] = { ...clients[idx], name, address };
-      delete window.currentClientId;
-    }
-  } else {
-    clients.push({ id: Date.now(), name, address });
-  }
-  saveClients(clients);
-  document.getElementById('client-name').value = '';
-  document.getElementById('client-address').value = '';
-  renderClients();
 }
 
 function renderClients() {
@@ -85,21 +68,20 @@ function renderClients() {
       <td>${c.name}</td>
       <td>${c.address}</td>
       <td>
-        <button onclick="editClient(${c.id})" style="padding:4px 8px;margin-right:4px;">Изменить</button>
-        <button onclick="deleteClient(${c.id})" style="padding:4px 8px;color:red;">Удалить</button>
+        <button class="btn-edit" onclick="editClient(${c.id})">Изменить</button>
+        <button class="btn-delete" onclick="deleteClient(${c.id})">Удалить</button>
       </td>`;
     list.appendChild(tr);
   });
 }
 
-
-// --- ТОВАРЫ: добавить, удалить, редактировать ---
+// --- ТОВАРЫ ---
 function addProduct() {
   const name = document.getElementById('product-name').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
   if (!name || isNaN(price)) return alert('Заполните название и цену товара');
-  const products = getProducts();
 
+  const products = getProducts();
   if (window.currentProductId !== undefined) {
     const idx = products.findIndex(p => p.id === window.currentProductId);
     if (idx >= 0) {
@@ -140,26 +122,26 @@ function renderProducts() {
       <td>${p.name}</td>
       <td>${p.price.toFixed(2)} ₽</td>
       <td>
-        <button onclick="editProduct(${p.id})" style="padding:4px 8px;margin-right:4px;">Изменить</button>
-        <button onclick="deleteProduct(${p.id})" style="padding:4px 8px;color:red;">Удалить</button>
+        <button class="btn-edit" onclick="editProduct(${p.id})">Изменить</button>
+        <button class="btn-delete" onclick="deleteProduct(${p.id})">Удалить</button>
       </td>`;
     list.appendChild(tr);
   });
 }
 
-
-// --- ЗАКАЗЫ: удалить (редактирование заказов лучше делать через создание нового или отдельный экран) ---
-function deleteOrder(id) {
-  if (!confirm('Удалить заказ?')) return;
-  const orders = getOrders().filter(o => o.id !== id);
-  saveOrders(orders);
-  renderOrders();
+// --- ЗАКАЗЫ ---
+function formatOrderItems(items) {
+  if (!items || items.length === 0) return 'Нет товаров';
+  return items.map(i => `${i.qty} × ${i.productName} (${i.price.toFixed(2)} ₽)`).join('<br>');
 }
 
 function renderOrders() {
   const list = document.getElementById('orders-list');
   list.innerHTML = '';
   getOrders().forEach((o, idx) => {
+    const shortText = o.items.map(i => `${i.qty}×${i.productName}`).join(', ');
+    const fullText = formatOrderItems(o.items).replace(/<br>/g, '\n');
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${idx + 1}</td>
@@ -167,9 +149,39 @@ function renderOrders() {
       <td>${o.date}</td>
       <td>${o.total.toFixed(2)} ₽</td>
       <td class="status-${o.status}">${o.status}</td>
-      <td><button onclick="deleteOrder(${o.id})" style="color:red;padding:4px 8px;">Удалить</button></td>`;
+      <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">
+        <span title="${fullText}"
+              style="cursor:pointer; color:#007bff; text-decoration:underline;"
+              onclick="showOrderDetails(${o.id})">
+          ${shortText}
+        </span>
+      </td>
+      <td>
+        <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
+      </td>`;
     list.appendChild(tr);
   });
+}
+
+function showOrderDetails(id) {
+  const order = getOrders().find(o => o.id === id);
+  if (!order) return;
+
+  const container = document.getElementById('order-items-detail');
+  container.innerHTML = '<ul style="padding-left:20px;">' +
+    order.items.map(i => `<li>${i.qty} × ${i.productName} — ${(i.price * i.qty).toFixed(2)} ₽</li>`)
+      .join('') +
+    '</ul>' +
+    `<p><strong>Итого: ${order.total.toFixed(2)} ₽</strong></p>`;
+
+  document.getElementById('order-details-modal').style.display = 'block';
+}
+
+function deleteOrder(id) {
+  if (!confirm('Удалить заказ?')) return;
+  const orders = getOrders().filter(o => o.id !== id);
+  saveOrders(orders);
+  renderOrders();
 }
 
 // Новый заказ (интерфейс)
@@ -191,7 +203,7 @@ function addOrderItemRow() {
   row.innerHTML = `
     <select class="order-product"></select>
     <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" />
-    <button onclick="this.parentElement.remove()" style="color:red">×</button>`;
+    <button onclick="this.parentElement.remove()" style="color:red;">×</button>`;
   container.appendChild(row);
 
   const products = getProducts();
