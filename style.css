@@ -133,7 +133,6 @@ th { background: #f8f9fa; }
 @media (max-width: 768px) {
   .sidebar { width: 70px; padding: 10px; }
   .sidebar h2 { display: none; }
-  .nav-btn span { display: none; } /* если добавишь span внутрь кнопки */
   .content { margin-left: 70px; padding: 12px; }
   .form-card { flex-direction: column; }
 }
