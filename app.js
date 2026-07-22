@@ -14,7 +14,9 @@ function saveOrders(arr) { localStorage.setItem('crm-orders', JSON.stringify(arr
 // Переключение секций
 function showSection(id) {
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('active');
   if (id === 'clients') renderClients();
   if (id === 'products') renderProducts();
   if (id === 'orders') renderOrders();
@@ -323,7 +325,7 @@ function updateRowTotal(row) {
   totalSpan.textContent = lineTotal.toFixed(2) + ' ₽';
 }
 
-// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА ---
+// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА (продолжение) ---
 function renderCreateOrder() {
   const select = document.getElementById('order-client');
   select.innerHTML = '';
@@ -371,8 +373,7 @@ function renderCreateOrder() {
 
         const products = getProducts();
         const sel = row.querySelector('select');
-        sel.innerHTML = '<option value="">--
-          <option value="">-- выберите товар --</option>`;
+        sel.innerHTML = '<option value="">-- выберите товар --</option>';
         products.forEach(p => {
           const opt = document.createElement('option');
           opt.value = p.id;
@@ -381,7 +382,6 @@ function renderCreateOrder() {
           sel.appendChild(opt);
         });
 
-        // ВАЖНО: вешаем слушатели, чтобы сумма обновлялась при редактировании
         sel.addEventListener('change', () => updateRowTotal(row));
         const qtyInput = row.querySelector('.order-qty');
         qtyInput.addEventListener('input', () => updateRowTotal(row));
@@ -445,7 +445,7 @@ function saveOrder() {
     if (!prodSel.value || !qtyInput.value) return;
 
     const product = getProducts().find(p => p.id == prodSel.value);
-    if (!product) return; // защита от битых данных
+    if (!product) return;
 
     const qty = parseInt(qtyInput.value, 10);
     const lineTotal = product.price * qty;
@@ -462,7 +462,7 @@ function saveOrder() {
   if (items.length === 0) return alert('Добавьте хотя бы одну позицию в заказ');
 
   const orders = getOrders();
-  const date = new Date().toISOString().split('T')[0]; // формат YYYY-MM-DD для корректной сортировки
+  const date = new Date().toISOString().split('T')[0];
 
   if (window.editingOrderId !== undefined) {
     const idx = orders.findIndex(o => o.id === window.editingOrderId);
@@ -512,7 +512,7 @@ function renderClientProfile() {
 
   const orders = getOrders()
     .filter(o => o.clientId == clientId)
-    .sort((a, b) => b.date.localeCompare(a.date)); // сортировка по YYYY-MM-DD
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   // История заказов
   const historyBody = document.getElementById('client-orders-history');
