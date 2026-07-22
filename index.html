@@ -1,162 +1,675 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <!-- Важно для iPhone: фиксированный масштаб, чтобы не ломались кнопки -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>CRM для торгового представителя</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --primary: #007bff;
+      --danger: #dc3545;
+      --bg: #f8f9fa;
+      --border: #dee2e6;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: #333;
+    }
+    .nav {
+      background: white;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .nav button {
+      padding: 10px 14px;
+      background: #eee;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      touch-action: manipulation; /* важно для iOS */
+    }
+    .nav button.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .section {
+      display: none;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    .section.active {
+      display: block;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      margin-top: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th {
+      background: #f1f3f5;
+      font-weight: 600;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .controls {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    input[type="text"],
+    input[type="number"],
+    select {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      width: 240px;
+      touch-action: manipulation;
+    }
+    button.primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      touch-action: manipulation;
+    }
+    button.danger {
+      background: var(--danger);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      touch-action: manipulation;
+    }
+
+    .status-new { color: var(--primary); font-weight: bold; }
+    .status-paid { color: green; font-weight: bold; }
+    .status-canceled { color: red; font-weight: bold; }
+
+    /* Крупные зоны нажатия для iPhone */
+    .row-actions button {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Боковая панель навигации -->
-  <nav class="sidebar">
-    <h2>CRM</h2>
-    <button onclick="showSection('clients')" class="nav-btn active" id="btn-clients">Клиенты</button>
-    <button onclick="showSection('products')" class="nav-btn" id="btn-products">Товары</button>
-    <button onclick="showSection('orders')" class="nav-btn" id="btn-orders">Заказы</button>
-    <button onclick="showSection('create-order')" class="nav-btn" id="btn-create-order">Новый заказ</button>
-  </nav>
+<!-- Навигация -->
+<div class="nav">
+  <button onclick="showSection('clients')" class="active">Клиенты</button>
+  <button onclick="showSection('products')">Товары</button>
+  <button onclick="showSection('orders')">Заказы</button>
+  <button onclick="showSection('create-order')">Новый заказ</button>
+</div>
 
-  <!-- Основной контент -->
-  <main class="content">
+<!-- КЛИЕНТЫ -->
+<section id="clients" class="section active">
+  <h2>Клиенты</h2>
+  <div class="controls">
+    <input type="text" id="client-search" placeholder="Поиск по названию или адресу" oninput="renderClients()" />
+    <button class="primary" onclick="addClientWithCheck()">Добавить клиента</button>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Название</th><th>Адрес</th><th style="width:240px;">Действия</th></tr>
+    </thead>
+    <tbody id="clients-list"></tbody>
+  </table>
 
-    <!-- Секция: Клиенты (с поиском) -->
-    <section id="clients" class="section active">
-      <h3>Клиенты</h3>
-      <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input type="text" id="client-search" placeholder="Поиск по названию или адресу" style="flex:1; min-width:200px;">
-        <input type="text" id="client-name" placeholder="Название клиента" style="flex:1; min-width:180px;">
-        <input type="text" id="client-address" placeholder="Адрес" style="flex:1; min-width:180px;">
-        <button onclick="addClientWithCheck()" class="btn-primary">Добавить</button>
-      </div>
-      <table>
-        <thead><tr><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead>
-        <tbody id="clients-list"></tbody>
-      </table>
-    </section>
+  <h3 style="margin-top:24px;">Добавить/изменить клиента</h3>
+  <div class="controls" style="flex-direction: column; gap:12px;">
+    <input type="text" id="client-name" placeholder="Название клиента" />
+    <input type="text" id="client-address" placeholder="Адрес" />
+    <button class="primary" onclick="addClientWithCheck()" style="width:auto;">Добавить</button>
+  </div>
+</section>
 
-    <!-- Секция: Товары (с поиском) -->
-    <section id="products" class="section">
-      <h3>Товары</h3>
-      <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input type="text" id="product-search" placeholder="Поиск по названию товара" style="flex:1; min-width:200px;">
-        <input type="text" id="product-name" placeholder="Название товара" style="flex:1; min-width:180px;">
-        <input type="number" id="product-price" placeholder="Цена" style="min-width:120px;">
-        <button onclick="addProduct()" class="btn-primary">Добавить товар</button>
-      </div>
-      <table>
-        <thead><tr><th>Товар</th><th>Цена</th><th>Действия</th></tr></thead>
-        <tbody id="products-list"></tbody>
-      </table>
-    </section>
+<!-- ТОВАРЫ -->
+<section id="products" class="section">
+  <h2>Товары</h2>
+  <div class="controls">
+    <input type="text" id="product-search" placeholder="Поиск товара" oninput="renderProducts()" />
+    <button class="primary" onclick="addProduct()">Добавить товар</button>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Товар</th><th>Цена</th><th style="width:180px;">Действия</th></tr>
+    </thead>
+    <tbody id="products-list"></tbody>
+  </table>
 
-    <!-- Секция: Заказы -->
-    <section id="orders" class="section">
-      <h3>Заказы</h3>
-      <div style="margin-bottom:16px;">
-        <label>Фильтр по направлению: </label>
-        <select id="filter-direction">
-          <option value="">Все</option>
-          <option value="Сергач">Сергач</option>
-          <option value="Кстово">Кстово</option>
-          <option value="Арз">Арз</option>
-          <option value="Лск-Кнг">Лск-Кнг</option>
-        </select>
-        <span style="margin-left:16px; font-weight:bold;">Итого: <span id="total-orders-sum">0.00</span> ₽</span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Направление</th>
-            <th>Клиент</th>
-            <th>Дата</th>
-            <th>Сумма</th>
-            <th>Статус</th>
-            <th>Состав заказа</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody id="orders-list"></tbody>
-      </table>
-    </section>
+  <h3 style="margin-top:24px;">Добавить/изменить товар</h3>
+  <div class="controls" style="flex-direction: column; gap:12px;">
+    <input type="text" id="product-name" placeholder="Название товара" />
+    <input type="number" id="product-price" placeholder="Цена ₽" step="0.01" />
+    <button class="primary" onclick="addProduct()" style="width:auto;">Добавить товар</button>
+  </div>
+</section>
 
-    <!-- Секция: Новый/редактирование заказа -->
-    <section id="create-order" class="section">
-      <h3 id="create-order-title">Новый заказ</h3>
-      <div class="form-card" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <div style="flex:1; min-width:200px;">
-          <label>Клиент</label>
-          <select id="order-client"></select>
-        </div>
-        <div style="flex:1; min-width:150px;">
-          <label>Направление</label>
-          <select id="order-direction">
-            <option value="Сергач">Сергач</option>
-            <option value="Кстово">Кстово</option>
-            <option value="Арз">Арз</option>
-            <option value="Лск-Кнг">Лск-Кнг</option>
-          </select>
-        </div>
-      </div>
+<!-- ЗАКАЗЫ -->
+<section id="orders" class="section">
+  <h2>Заказы</h2>
+  <div class="controls">
+    <select id="filter-direction">
+      <option value="">Все направления</option>
+      <option value="Восток">Восток</option>
+      <option value="Запад">Запад</option>
+      <option value="Центр">Центр</option>
+    </select>
+    <span>Итого: <strong id="total-orders-sum">0.00 ₽</strong></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Направление</th>
+        <th>Клиент</th>
+        <th>Дата</th>
+        <th>Сумма</th>
+        <th>Статус</th>
+        <th style="width:160px;">Действия</th>
+      </tr>
+    </thead>
+    <tbody id="orders-list"></tbody>
+  </table>
+</section>
 
-      <!-- Быстрый поиск товара для заказа -->
-      <div class="form-card" style="background:#f8f9fa; padding:12px; border-radius:6px; margin-bottom:12px;">
-        <label>Быстрый поиск товара для заказа</label>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="quick-product-search" placeholder="Начните вводить название товара..." style="flex:1; min-width:200px;" />
-          <button onclick="addQuickProduct()" class="btn-primary" style="white-space:nowrap;">+ Добавить</button>
-        </div>
-        <small style="color:#666; margin-top:4px;">Начните печатать — появятся подсказки. Кликните по товару или нажмите «+ Добавить».</small>
-      </div>
-
-      <h4>Состав заказа</h4>
-      <div id="order-items"></div>
-      <button onclick="addOrderItemRow()" class="btn-secondary" style="margin-top:8px;">+ Добавить позицию вручную</button>
-
-      <button onclick="saveOrder()" class="btn-primary" style="margin-top:16px; width:100%; font-size:16px;">Сохранить заказ</button>
-    </section>
-
-    <!-- Секция: Профиль клиента -->
-    <section id="client-profile" class="section">
-      <a href="#" onclick="showSection('clients');return false;" style="color:#007bff;">← Назад к клиентам</a>
-      <h3 id="client-profile-name"></h3>
-      <p><strong>Адрес:</strong> <span id="client-profile-address"></span></p>
-      <p><strong>ID:</strong> <span id="client-profile-id"></span></p>
-
-      <h4>История заказов</h4>
-      <table>
-        <thead><tr><th>Дата</th><th>Направление</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead>
-        <tbody id="client-orders-history"></tbody>
-      </table>
-
-      <div id="client-calendar-view">
-        <h4>Подробный календарь посещений (по дням)</h4>
-        <table id="client-calendar-table">
-          <thead>
-            <tr>
-              <th>Дата</th>
-              <th>Заказы в этот день</th>
-              <th>Товары в заказах</th>
-              <th>Итого за день</th>
-            </tr>
-          </thead>
-          <tbody id="client-calendar-body"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <!-- Модальное окно: детали заказа -->
-  <div id="order-details-modal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeOrderDetails()">&times;</span>
-      <h3>Детали заказа</h3>
-      <div id="order-items-detail"></div>
-      <button class="btn-primary" onclick="closeOrderDetails()">Закрыть</button>
-    </div>
+<!-- СОЗДАНИЕ ЗАКАЗА (без поиска по названию) -->
+<section id="create-order" class="section">
+  <h2 id="create-order-title">Новый заказ</h2>
+  <div class="controls" style="gap:14px;">
+    <label>Клиент:
+      <select id="order-client"></select>
+    </label>
+    <label>Направление:
+      <select id="order-direction">
+        <option value="Восток">Восток</option>
+        <option value="Запад">Запад</option>
+        <option value="Центр">Центр</option>
+      </select>
+    </label>
   </div>
 
-  <script src="app.js"></script>
-</body>
-</html>
+  <h3>Товары в заказе</h3>
+  <div id="order-items" style="margin:16px 0;"></div>
+  
+  <button class="primary" onclick="addOrderItemRow()">+ Добавить строку</button>
+
+  <button class="primary" style="padding:14px 24px; font-size:17px; margin-top:20px;" onclick="saveOrder()">Сохранить заказ</button>
+</section>
+
+<!-- ПРОФИЛЬ КЛИЕНТА -->
+<section id="client-profile" class="section">
+  <h2>Профиль клиента</h2>
+  <p><strong>Название:</strong> <span id="client-profile-name"></span></p>
+  <p><strong>Адрес:</strong> <span id="client-profile-address"></span></p>
+  <p><strong>ID:</strong> <span id="client-profile-id"></span></p>
+
+  <h3>История заказов</h3>
+  <table>
+    <thead><tr><th>Дата</th><th>Направление</th><th>Сумма</th><th>Статус</th><th style="width:180px;">Действия</th></tr></thead>
+    <tbody id="client-orders-history"></tbody>
+  </table>
+
+  <button class="primary" onclick="showSection('clients')">Назад к клиентам</button>
+</section>
+
+<script>
+// --- Инициализация localStorage ---
+(function() {
+  const keys = ['crm-clients', 'crm-products', 'crm-orders'];
+  keys.forEach(key => {
+    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify([]));
+  });
+})();
+
+function getClients() { return JSON.parse(localStorage.getItem('crm-clients') || '[]'); }
+function getProducts() { return JSON.parse(localStorage.getItem('crm-products') || '[]'); }
+function getOrders() { return JSON.parse(localStorage.getItem('crm-orders') || '[]'); }
+
+function saveClients(arr) { localStorage.setItem('crm-clients', JSON.stringify(arr)); }
+function saveProducts(arr) { localStorage.setItem('crm-products', JSON.stringify(arr)); }
+function saveOrders(arr) { localStorage.setItem('crm-orders', JSON.stringify(arr)); }
+
+// Защита от двойного клика (критично для iPhone)
+let clickLock = false;
+function safeClick(event, callback) {
+  event.stopPropagation();
+  if (clickLock) return;
+  clickLock = true;
+  try {
+    callback();
+  } finally {
+    setTimeout(() => clickLock = false, 300);
+  }
+}
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('active');
+  if (id === 'clients') renderClients();
+  if (id === 'products') renderProducts();
+  if (id === 'orders') renderOrders();
+  if (id === 'create-order') renderCreateOrder();
+  if (id === 'client-profile') renderClientProfile();
+}
+
+// --- КЛИЕНТЫ ---
+function renderClients() {
+  const list = document.getElementById('clients-list');
+  list.innerHTML = '';
+  const search = (document.getElementById('client-search')?.value || '').trim().toLowerCase();
+  const clients = getClients();
+
+  clients.filter(c =>
+    c.name.toLowerCase().includes(search) ||
+    c.address.toLowerCase().includes(search)
+  ).forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.name}</td>
+      <td>${c.address}</td>
+      <td class="row-actions">
+        <button class="primary" style="padding:8px 12px; font-size:13px;" onclick="safeClick(event, () => editClient(${c.id}))">Изменить</button>
+        <button class="danger" style="padding:8px 12px; font-size:13px;" onclick="safeClick(event, () => deleteClient(${c.id}))">Удалить</button>
+        <button style="background:#28a745; color:white; border:none; padding:8px 12px; border-radius:6px; font-size:13px;" onclick="safeClick(event, () => openClientProfile(${c.id}))">История</button>
+      </td>`;
+    list.appendChild(tr);
+  });
+}
+
+function addClientWithCheck() {
+  const name = (document.getElementById('client-name')?.value || '').trim();
+  const address = (document.getElementById('client-address')?.value || '').trim();
+  if (!name) return alert('Укажите название клиента');
+
+  const clients = getClients();
+  if (window.currentClientId !== undefined) {
+    const idx = clients.findIndex(c => c.id === window.currentClientId);
+    if (idx >= 0) {
+      clients[idx] = { ...clients[idx], name, address };
+      delete window.currentClientId;
+    }
+  } else {
+    clients.push({ id: Date.now(), name, address });
+  }
+  saveClients(clients);
+  (document.getElementById('client-name')?.value = '');
+  (document.getElementById('client-address')?.value = '');
+  renderClients();
+}
+
+function deleteClient(id) {
+  if (!confirm('Удалить клиента?')) return;
+  const clients = getClients().filter(c => c.id !== id);
+  saveClients(clients);
+  renderClients();
+}
+
+function editClient(id) {
+  const client = getClients().find(c => c.id === id);
+  if (!client) return;
+  (document.getElementById('client-name')?.value = client.name);
+  (document.getElementById('client-address')?.value = client.address);
+  window.currentClientId = id;
+  alert('Измените данные и нажмите «Добавить» — запись обновится');
+}
+
+function openClientProfile(clientId) {
+  window.viewingClientId = clientId;
+  showSection('client-profile');
+}
+
+// --- ТОВАРЫ ---
+function renderProducts() {
+  const list = document.getElementById('products-list');
+  list.innerHTML = '';
+  const search = (document.getElementById('product-search')?.value || '').trim().toLowerCase();
+  const products = getProducts();
+
+  products.filter(p => p.name.toLowerCase().includes(search)).forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.price.toFixed(2)} ₽</td>
+      <td class="row-actions">
+        <button class="primary" style="padding:8px 12px; font-size:13px;" onclick="safeClick(event, () => editProduct(${p.id}))">Изменить</button>
+        <button class="danger" style="padding:8px 12px; font-size:13px;" onclick="safeClick(event, () => deleteProduct(${p.id}))">Удалить</button>
+      </td>`;
+    list.appendChild(tr);
+  });
+}
+
+function addProduct() {
+  const name = (document.getElementById('product-name')?.value || '').trim();
+  const price = parseFloat(document.getElementById('product-price')?.value);
+  if (!name || isNaN(price)) return alert('Заполните название и цену товара');
+
+  const products = getProducts();
+  if (window.currentProductId !== undefined) {
+    const idx = products.findIndex(p => p.id === window.currentProductId);
+    if (idx >= 0) {
+      products[idx] = { ...products[idx], name, price };
+      delete window.currentProductId;
+    }
+  } else {
+    products.push({ id: Date.now(), name, price });
+  }
+    saveProducts(products);
+  (document.getElementById('product-name')?.value = '');
+  (document.getElementById('product-price')?.value = '');
+  renderProducts();
+}
+
+function editProduct(id) {
+  const product = getProducts().find(p => p.id === id);
+  if (!product) return;
+  document.getElementById('product-name').value = product.name;
+  document.getElementById('product-price').value = product.price;
+  window.currentProductId = id;
+  alert('Измените данные и нажмите «Добавить товар» — запись обновится');
+}
+
+function deleteProduct(id) {
+  if (!confirm('Удалить товар?')) return;
+  const products = getProducts().filter(p => p.id !== id);
+  saveProducts(products);
+  renderProducts();
+}
+
+// --- ЗАКАЗЫ (общий список) ---
+function renderOrders() {
+  const list = document.getElementById('orders-list');
+  list.innerHTML = '';
+  const orders = getOrders();
+  const filter = document.getElementById('filter-direction')?.value;
+
+  let totalSum = 0;
+
+  orders.filter(o => !filter || o.direction === filter).forEach(o => {
+    totalSum += o.total;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>#${o.id}</td>
+      <td>${o.direction || '-'}</td>
+      <td>${o.clientName}</td>
+      <td>${o.date}</td>
+      <td>${o.total.toFixed(2)} ₽</td>
+      <td class="status-${o.status}">${o.status}</td>
+      <td class="row-actions">
+        <button class="primary" style="padding:8px 12px; font-size:13px;" onclick="safeClick(event, () => editOrder(${o.id}))">Изменить</button>
+        <button class="danger" style="padding:8px 12px; font-size:13px;" onclick="safeClick(event, () => deleteOrder(${o.id}))">Удалить</button>
+      </td>`;
+    list.appendChild(tr);
+  });
+
+  document.getElementById('total-orders-sum').textContent = totalSum.toFixed(2) + ' ₽';
+}
+
+function deleteOrder(id) {
+  if (!confirm('Удалить заказ?')) return;
+  const orders = getOrders().filter(o => o.id !== id);
+  saveOrders(orders);
+  renderOrders();
+}
+
+function editOrder(id) {
+  window.editingOrderId = id;
+  showSection('create-order');
+}
+
+// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА ---
+function addOrderItemRow() {
+  const container = document.getElementById('order-items');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.style.marginBottom = '12px';
+  row.innerHTML = `
+    <select class="order-product" style="width:auto; min-width:240px;"></select>
+    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" style="width:80px; font-size:16px;" />
+    <span class="row-total-display" style="font-weight:bold; margin:0 12px;"></span>
+    <button type="button" onclick="this.parentElement.remove(); updateTotalsInOrder()" style="color:red; background:none; border:none; cursor:pointer; font-size:20px;">×</button>`;
+  container.appendChild(row);
+
+  fillProductSelect(row.querySelector('select'));
+
+  const sel = row.querySelector('select');
+  const qty = row.querySelector('.order-qty');
+  const totalDisplay = row.querySelector('.row-total-display');
+
+  sel.addEventListener('change', () => updateRowTotal(row));
+  qty.addEventListener('input', () => updateRowTotal(row));
+
+  updateRowTotal(row);
+}
+
+function fillProductSelect(sel) {
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- выберите товар --</option>';
+  getProducts().forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
+    sel.appendChild(opt);
+  });
+}
+
+function updateRowTotal(row) {
+  const sel = row.querySelector('select');
+  const qtyInput = row.querySelector('.order-qty');
+  const display = row.querySelector('.row-total-display');
+
+  if (!sel.value || !qtyInput.value) {
+    display.textContent = '';
+    return;
+  }
+
+  const product = getProducts().find(p => p.id == sel.value);
+  if (!product) {
+    display.textContent = '';
+    return;
+  }
+
+  const qty = parseInt(qtyInput.value, 10);
+  const lineTotal = product.price * qty;
+  display.textContent = lineTotal.toFixed(2) + ' ₽';
+}
+
+function updateTotalsInOrder() {
+  // Пересчитывает общую сумму заказа при удалении строки
+  // (можно вызывать дополнительно, если нужно обновлять где-то ещё)
+  // Сейчас общая сумма считается в saveOrder
+}
+
+function renderCreateOrder() {
+  const clientSel = document.getElementById('order-client');
+  const directionSel = document.getElementById('order-direction');
+  const itemsContainer = document.getElementById('order-items');
+
+  if (!clientSel || !itemsContainer) return;
+
+  clientSel.innerHTML = '<option value="">-- выберите клиента --</option>';
+  getClients().forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    clientSel.appendChild(opt);
+  });
+
+  if (window.editingOrderId !== undefined) {
+    document.getElementById('create-order-title').textContent = 'Редактирование заказа';
+    const order = getOrders().find(o => o.id === window.editingOrderId);
+    if (order) {
+      clientSel.value = order.clientId;
+      if (directionSel) directionSel.value = order.direction;
+
+      itemsContainer.innerHTML = '';
+      order.items.forEach(item => {
+        const row = document.createElement('div');
+        row.style.marginBottom = '12px';
+        row.innerHTML = `
+          <select class="order-product" style="width:auto; min-width:240px;"></select>
+          <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="${item.qty}" style="width:80px; font-size:16px;" />
+          <span class="row-total-display" style="font-weight:bold; margin:0 12px;"></span>
+          <button type="button" onclick="this.parentElement.remove(); updateTotalsInOrder()" style="color:red; background:none; border:none; cursor:pointer; font-size:20px;">×</button>`;
+        itemsContainer.appendChild(row);
+
+        fillProductSelect(row.querySelector('select'));
+        const sel = row.querySelector('select');
+        sel.value = item.productId;
+
+        const qtyInput = row.querySelector('.order-qty');
+        const display = row.querySelector('.row-total-display');
+
+        sel.addEventListener('change', () => updateRowTotal(row));
+        qtyInput.addEventListener('input', () => updateRowTotal(row));
+        updateRowTotal(row);
+      });
+    }
+  } else {
+    document.getElementById('create-order-title').textContent = 'Новый заказ';
+    itemsContainer.innerHTML = '';
+    addOrderItemRow();
+  }
+}
+
+function saveOrder() {
+  const clientId = document.getElementById('order-client')?.value;
+  const direction = document.getElementById('order-direction')?.value;
+  if (!clientId) return alert('Выберите клиента');
+  if (!direction) return alert('Выберите направление');
+
+  const client = getClients().find(c => c.id == clientId);
+  if (!client) return alert('Клиент не найден — обновите страницу и выберите клиента заново.');
+
+  const rows = document.querySelectorAll('#order-items > div');
+  let total = 0;
+  const items = [];
+
+  rows.forEach(row => {
+    const prodSel = row.querySelector('select');
+    const qtyInput = row.querySelector('.order-qty');
+    if (!prodSel.value || !qtyInput.value) return;
+
+    const product = getProducts().find(p => p.id == prodSel.value);
+    if (!product) return;
+
+    const qty = parseInt(qtyInput.value, 10);
+    const lineTotal = product.price * qty;
+    total += lineTotal;
+    items.push({
+      productId: product.id,
+      productName: product.name,
+      qty,
+      price: product.price,
+      total: lineTotal
+    });
+  });
+
+  if (items.length === 0) return alert('Добавьте хотя бы одну позицию в заказ');
+
+  const orders = getOrders();
+  const date = new Date().toISOString().split('T')[0];
+
+  if (window.editingOrderId !== undefined) {
+    const idx = orders.findIndex(o => o.id === window.editingOrderId);
+    if (idx >= 0) {
+      orders[idx] = {
+        ...orders[idx],
+        clientId,
+        clientName: client.name,
+        direction,
+        items,
+        total,
+        date
+      };
+      delete window.editingOrderId;
+    }
+  } else {
+    orders.push({
+      id: Date.now(),
+      clientId,
+      clientName: client.name,
+      direction,
+      date,
+      items,
+      total,
+      status: 'new'
+    });
+  }
+
+  saveOrders(orders);
+  alert('Заказ сохранён!');
+  showSection('orders');
+}
+
+// --- ПРОФИЛЬ КЛИЕНТА ---
+function renderClientProfile() {
+  const clientId = window.viewingClientId;
+  const client = getClients().find(c => c.id === clientId);
+  if (!client) {
+    alert('Клиент не найден');
+    showSection('clients');
+    return;
+  }
+
+  document.getElementById('client-profile-name').textContent = client.name;
+  document.getElementById('client-profile-address').textContent = client.address;
+  document.getElementById('client-profile-id').textContent = client.id;
+
+  const orders = getOrders()
+    .filter(o => o.clientId == clientId)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const historyBody = document.getElementById('client-orders-history');
+  historyBody.innerHTML = '';
+
+  orders.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${o.date}</td>
+      <td>${o.direction || '-'}</td>
+      <td>${o.total.toFixed(2)} ₽</td>
+      <td class="status-${o.status}">${o.status}</td>
+      <td style="white-space:nowrap;">
+        <button class="primary" style="padding:6px 10px; font-size:12px;" onclick="safeClick(event, () => editOrder(${o.id}))">Изменить</button>
+        <button class="danger" style="padding:6px 10px; font-size:12px;" onclick="safeClick(event, () => deleteOrder(${o.id}))">Удалить</button>
+      </td>`;
+    historyBody.appendChild(tr);
+  });
+}
+</script>
+
