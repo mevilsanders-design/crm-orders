@@ -35,25 +35,14 @@
       </table>
     </section>
 
-    <!-- Секция: Товары (с импортом из CSV) -->
+    <!-- Секция: Товары -->
     <section id="products" class="section">
       <h3>Товары</h3>
-      <div class="form-card" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+      <div class="form-card">
         <input type="text" id="product-name" placeholder="Название товара">
         <input type="number" id="product-price" placeholder="Цена">
         <button onclick="addProduct()" class="btn-primary">Добавить товар</button>
-
-        <!-- Кнопка импорта из CSV -->
-        <label class="btn-secondary" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-          📂 Загрузить из CSV
-          <input type="file" id="csv-file-input" accept=".csv" style="position:absolute; width:0; height:0; opacity:0;" onchange="importProductsFromCSV(this)">
-        </label>
       </div>
-
-      <p style="font-size:0.9em; color:#666; margin-bottom:16px;">
-        Формат CSV: первая строка — <code>name,price</code>, далее: <code>Товар А,120</code>, <code>Товар Б,99.5</code>. Сохраняйте Excel как «CSV UTF‑8».
-      </p>
-
       <table>
         <thead><tr><th>Товар</th><th>Цена</th><th>Действия</th></tr></thead>
         <tbody id="products-list"></tbody>
