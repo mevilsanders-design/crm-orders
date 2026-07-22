@@ -35,12 +35,13 @@
       </table>
     </section>
 
-    <!-- Секция: Товары -->
+    <!-- Секция: Товары (с поиском) -->
     <section id="products" class="section">
       <h3>Товары</h3>
-      <div class="form-card">
-        <input type="text" id="product-name" placeholder="Название товара">
-        <input type="number" id="product-price" placeholder="Цена">
+      <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input type="text" id="product-search" placeholder="Поиск по названию товара" style="flex:1; min-width:200px;">
+        <input type="text" id="product-name" placeholder="Название товара" style="flex:1; min-width:180px;">
+        <input type="number" id="product-price" placeholder="Цена" style="min-width:120px;">
         <button onclick="addProduct()" class="btn-primary">Добавить товар</button>
       </div>
       <table>
@@ -56,9 +57,10 @@
         <label>Фильтр по направлению: </label>
         <select id="filter-direction">
           <option value="">Все</option>
-          <option value="Север">Север</option>
-          <option value="Юг">Юг</option>
-          <option value="Центр">Центр</option>
+          <option value="Сергач">Сергач</option>
+          <option value="Кстово">Кстово</option>
+          <option value="Арз">Арз</option>
+          <option value="Лск-Кнг">Лск-Кнг</option>
         </select>
         <span style="margin-left:16px; font-weight:bold;">Итого: <span id="total-orders-sum">0.00</span> ₽</span>
       </div>
@@ -90,9 +92,10 @@
         <div style="flex:1; min-width:150px;">
           <label>Направление</label>
           <select id="order-direction">
-            <option value="Север">Север</option>
-            <option value="Юг">Юг</option>
-            <option value="Центр">Центр</option>
+            <option value="Сергач">Сергач</option>
+            <option value="Кстово">Кстово</option>
+            <option value="Арз">Арз</option>
+            <option value="Лск-Кнг">Лск-Кнг</option>
           </select>
         </div>
       </div>
