@@ -222,6 +222,7 @@ function addOrderItemRow() {
 }
 
 function recalcTotal() {
+  // Заглушка: здесь можно добавить живой пересчёт суммы
   console.log('Пересчёт суммы...');
 }
 
@@ -252,4 +253,11 @@ function saveOrder() {
     });
   });
 
-  if (items.length === 0) return alert('Добавьте хотя бы одну
+  if (items.length === 0) return alert('Добавьте хотя бы одну позицию');
+
+  const orders = getOrders();
+  const now = new Date().toLocaleDateString('ru-RU');
+
+  if (editingOrderId) {
+    // Редактирование
+    const idx = orders.
