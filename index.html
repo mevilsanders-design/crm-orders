@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CRM: Сбор заказов</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM для торгового представителя</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,13 +20,13 @@
   <!-- Основной контент -->
   <main class="content">
 
-    <!-- Секция: Клиенты -->
+    <!-- Секция: Клиенты (с поиском и полем Магазин) -->
     <section id="clients" class="section active">
       <h3>Клиенты</h3>
-      <div class="form-card">
-        <input type="text" id="client-search" placeholder="Поиск по магазину/точке/адресу" style="flex:1; min-width:200px;">
-        <input type="text" id="client-name" placeholder="Точка/клиент" style="flex:1; min-width:180px;">
-        <input type="text" id="client-store" placeholder="Магазин (сеть)" style="flex:1; min-width:180px;">
+      <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input type="text" id="client-search" placeholder="Поиск по магазину, точке или адресу" style="flex:1; min-width:200px;">
+        <input type="text" id="client-name" placeholder="Название точки/клиента" style="flex:1; min-width:180px;">
+        <input type="text" id="client-store" placeholder="Название магазина (сеть)" style="flex:1; min-width:180px;">
         <input type="text" id="client-address" placeholder="Адрес" style="flex:1; min-width:180px;">
         <button onclick="addClientWithCheck()" class="btn-primary">Добавить</button>
       </div>
@@ -36,11 +36,11 @@
       </table>
     </section>
 
-    <!-- Секция: Товары -->
+    <!-- Секция: Товары (с поиском) -->
     <section id="products" class="section">
       <h3>Товары</h3>
-      <div class="form-card">
-        <input type="text" id="product-search" placeholder="Поиск товара" style="flex:1; min-width:200px;">
+      <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input type="text" id="product-search" placeholder="Поиск по названию товара" style="flex:1; min-width:200px;">
         <input type="text" id="product-name" placeholder="Название товара" style="flex:1; min-width:180px;">
         <input type="number" id="product-price" placeholder="Цена" style="min-width:120px;">
         <button onclick="addProduct()" class="btn-primary">Добавить товар</button>
@@ -74,7 +74,7 @@
             <th>Дата</th>
             <th>Сумма</th>
             <th>Статус</th>
-            <th>Состав</th>
+            <th>Состав заказа</th>
             <th>Действия</th>
           </tr>
         </thead>
@@ -82,46 +82,34 @@
       </table>
     </section>
 
-    <!-- Секция: Новый заказ (с быстрым подбором товаров) -->
+    <!-- Секция: Новый/редактирование заказа -->
     <section id="create-order" class="section">
       <h3 id="create-order-title">Новый заказ</h3>
-
-      <div style="display:flex; gap:16px; flex-wrap:wrap;">
-
-        <!-- Быстрый подбор товаров (слева) -->
-        <aside style="flex:0 0 240px; min-width:240px; background:#fff; padding:12px; border-radius:8px; height:calc(100vh - 140px); overflow-y:auto; border:1px solid #ddd;">
-          <h4 style="margin:0 0 10px 0; font-size:15px;">Быстрый подбор</h4>
-          <input type="text" id="quick-product-search" placeholder="Поиск…" style="width:100%; margin-bottom:10px; padding:6px; box-sizing:border-box;">
-          <div id="quick-products-list" style="max-height:500px; overflow-y:auto;"></div>
-        </aside>
-
-        <!-- Форма заказа (справа) -->
-        <main style="flex:1; min-width:300px;">
-          <div class="form-card" style="display:flex; flex-wrap:wrap; gap:12px;">
-            <div style="flex:1; min-width:200px;">
-              <label>Клиент</label>
-              <select id="order-client" style="width:100%; padding:6px;"></select>
-            </div>
-            <div style="flex:1; min-width:150px;">
-              <label>Направление</label>
-              <select id="order-direction" style="width:100%; padding:6px;">
-                <option value="Сергач">Сергач</option>
-                <option value="Кстово">Кстово</option>
-                <option value="Арз">Арз</option>
-                <option value="Лск-Кнг">Лск-Кнг</option>
-              </select>
-            </div>
-          </div>
-
-          <h4>Состав заказа</h4>
-          <div id="order-items"></div>
-          <button onclick="addOrderItemRow()" class="btn-secondary" style="padding:8px 12px; margin-top:8px;">+ Добавить позицию</button>
-          <button onclick="saveOrder()" class="btn-primary" style="padding:10px 16px; margin-top:16px; width:100%;">Сохранить заказ</button>
-        </main>
+      <div class="form-card" style="display:flex; flex-wrap:wrap; gap:12px;">
+        <div style="flex:1; min-width:200px;">
+          <label>Клиент</label>
+          <select id="order-client"></select>
+        </div>
+        <div style="flex:1; min-width:150px;">
+          <label>Направление</label>
+          <select id="order-direction">
+            <option value="Сергач">Сергач</option>
+            <option value="Кстово">Кстово</option>
+            <option value="Арз">Арз</option>
+            <option value="Лск-Кнг">Лск-Кнг</option>
+          </select>
+        </div>
       </div>
+
+      <h4>Состав заказа</h4>
+      <!-- Каждая строка: поиск + select + кол-во + кнопка удаления -->
+      <div id="order-items"></div>
+      <button onclick="addOrderItemRow()" class="btn-secondary" style="margin-top:8px;">+ Добавить позицию</button>
+
+      <button onclick="saveOrder()" class="btn-primary" style="margin-top:16px;">Сохранить заказ</button>
     </section>
 
-    <!-- Секция: Профиль клиента -->
+    <!-- Секция: Профиль клиента (история + подробный календарь) -->
     <section id="client-profile" class="section">
       <a href="#" onclick="showSection('clients');return false;" style="color:#007bff;">← Назад к клиентам</a>
       <h3 id="client-profile-name"></h3>
@@ -136,10 +124,15 @@
       </table>
 
       <div id="client-calendar-view">
-        <h4>Календарь посещений (по дням)</h4>
+        <h4>Подробный календарь посещений (по дням)</h4>
         <table id="client-calendar-table">
           <thead>
-            <tr><th>Дата</th><th>Заказы за день</th><th>Товары за день</th><th>Итого за день</th></tr>
+            <tr>
+              <th>Дата</th>
+              <th>Заказы в этот день</th>
+              <th>Товары в заказах</th>
+              <th>Итого за день</th>
+            </tr>
           </thead>
           <tbody id="client-calendar-body"></tbody>
         </table>
