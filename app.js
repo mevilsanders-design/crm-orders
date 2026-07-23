@@ -22,7 +22,7 @@ function showSection(id) {
   if (id === 'client-profile') renderClientProfile();
 }
 
-// --- КЛИЕНТЫ (с магазином и поиском) ---
+// --- КЛИЕНТЫ ---
 function renderClients() {
   const list = document.getElementById('clients-list');
   list.innerHTML = '';
@@ -74,6 +74,7 @@ function addClientWithCheck() {
 }
 
 function deleteClient(id) {
+  if (!confirm
   if (!confirm('Удалить клиента?')) return;
   const clients = getClients().filter(c => c.id !== id);
   saveClients(clients);
@@ -85,17 +86,17 @@ function editClient(id) {
   if (!client) return;
   document.getElementById('client-name').value = client.name;
   document.getElementById('client-store').value = client.storeName || '';
-  document.getElementById('client-address').value = client.address;
+  document.getElementById('client-address').value = client.address || '';
   window.currentClientId = id;
   alert('Измените данные и нажмите «Добавить» — запись обновится');
 }
 
-function openClientProfile(clientId) {
-  window.viewingClientId = clientId;
+function openClientProfile(id) {
+  window.viewingClientId = id;
   showSection('client-profile');
 }
 
-// --- ТОВАРЫ (с поиском по названию) ---
+// --- ТОВАРЫ ---
 function renderProducts() {
   const list = document.getElementById('products-list');
   list.innerHTML = '';
@@ -224,7 +225,7 @@ function showOrderDetails(id) {
   document.getElementById('order-details-modal').style.display = 'flex';
 }
 
-// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА (с поиском товара в каждой строке) ---
+// --- СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ЗАКАЗА (таблица + общий поиск) ---
 function renderCreateOrder() {
   const select = document.getElementById('order-client');
   select.innerHTML = '';
@@ -256,93 +257,130 @@ function renderCreateOrder() {
     document.getElementById('create-order-title').textContent = 'Новый заказ';
   }
 
+  // Очищаем таблицу позиций
   const itemsContainer = document.getElementById('order-items');
   itemsContainer.innerHTML = '';
+
+  const searchInput = document.getElementById('order-product-search');
+  searchInput.value = ''; // сброс поиска при открытии формы
+  searchInput.addEventListener('input', () => filterOrderItemsTable(), { once: false });
 
   if (window.editingOrderId !== undefined) {
     const order = getOrders().find(o => o.id === window.editingOrderId);
     if (order && order.items && order.items.length > 0) {
       order.items.forEach(item => {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.gap = '8px';
-        row.style.alignItems = 'center';
-        row.style.marginBottom = '8px';
-        row.innerHTML = `
-          <input type="text" class="product-search-input" placeholder="Поиск товара..." style="flex:1; min-width:180px;" />
-          <select class="order-product" style="flex:1; min-width:200px;"></select>
-          <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="${item.qty}" style="width:80px;" />
-          <button onclick="this.parentElement.remove()" style="color:red; cursor:pointer;">×</button>`;
-        itemsContainer.appendChild(row);
+        addOrderItemRow(item.productId, item.qty);
+        // после добавления строки нужно выбрать товар и обновить значения
+        const lastRow = itemsContainer.lastElementChild;
+        const prodSel = lastRow.querySelector('select');
+        const qtyInput = lastRow.querySelector('.order-qty');
+        const priceSpan = lastRow.querySelector('.order-price');
+        const totalSpan = lastRow.querySelector('.order-total');
 
-        const products = getProducts();
-        const sel = row.querySelector('select');
-        sel.innerHTML = '<option value="">-- выберите товар --</option>';
-        products.forEach(p => {
-          const opt = document.createElement('option');
-          opt.value = p.id;
-          opt.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
-          if (p.id == item.productId) opt.selected = true;
-          sel.appendChild(opt);
-        });
-
-        // Вешаем поиск на этот input
-        const searchInput = row.querySelector('.product-search-input');
-        searchInput.addEventListener('input', () => {
-          filterProductSelect(searchInput, sel);
-        }, { once: false }); // не once, чтобы работало при каждом вводе
+        if (prodSel && prodSel.value === '' && item.productId) {
+          const opt = prodSel.querySelector(`option[value="${item.productId}"]`);
+          if (opt) opt.selected = true;
+          updateOrderItemRow(lastRow);
+        }
+        if (qtyInput) qtyInput.value = item.qty;
       });
     } else {
       addOrderItemRow();
     }
   } else {
-    addOrderItemRow();
+    addOrderItemRow(); // одна пустая строка по умолчанию
   }
 }
 
-function addOrderItemRow() {
+// Добавить строку в таблицу позиций
+function addOrderItemRow(preSelectedProductId = null, preQty = 1) {
   const container = document.getElementById('order-items');
-  const row = document.createElement('div');
-  row.style.display = 'flex';
-  row.style.gap = '8px';
-  row.style.alignItems = 'center';
-  row.style.marginBottom = '8px';
-  row.innerHTML = `
-    <input type="text" class="product-search-input" placeholder="Поиск товара..." style="flex:1; min-width:180px;" />
-    <select class="order-product" style="flex:1; min-width:200px;"></select>
-    <input type="number" class="order-qty" placeholder="Кол-во" min="1" value="1" style="width:80px;" />
-    <button onclick="this.parentElement.remove()" style="color:red; cursor:pointer;">×</button>`;
-  container.appendChild(row);
+  const row = document.createElement('tr');
+  row.style.borderBottom = '1px solid #eee';
 
   const products = getProducts();
-  const sel = row.querySelector('select');
-  sel.innerHTML = '<option value="">-- выберите товар --</option>';
+
+  let optionsHtml = '<option value="" selected>-- выберите товар --</option>';
   products.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = `${p.name} (${p.price.toFixed(2)} ₽)`;
-    sel.appendChild(opt);
+    optionsHtml += `<option value="${p.id}">${p.name} (${p.price.toFixed(2)} ₽)</option>`;
   });
 
-  // Вешаем поиск
-  const searchInput = row.querySelector('.product-search-input');
-  searchInput.addEventListener('input', () => {
-    filterProductSelect(searchInput, sel);
-  }, { once: false });
+  row.innerHTML = `
+    <td style="padding:6px; border:1px solid #ddd;">
+      <select class="order-product" style="width:100%;">
+        ${optionsHtml}
+      </select>
+    </td>
+    <td style="padding:6px; text-align:right; border:1px solid #ddd;">
+      <input type="number" class="order-qty" value="${preQty}" min="1" style="width:60px; text-align:right;" />
+    </td>
+    <td style="padding:6px; text-align:right; border:1px solid #ddd;">
+      <span class="order-price" style="font-weight:bold;">0.00 ₽</span>
+    </td>
+    <td style="padding:6px; text-align:right; border:1px solid #ddd; font-weight:bold; color:#2c3e50;">
+      <span class="order-total">0.00 ₽</span>
+    </td>
+    <td style="padding:6px; border:1px solid #ddd;">
+      <button class="btn-delete" style="padding:2px 8px; font-size:12px;" onclick="this.parentElement.parentElement.remove()">×</button>
+    </td>`;
+
+  container.appendChild(row);
+
+  // Вешаем обработчики на новую строку
+  const prodSel = row.querySelector('select.order-product');
+  const qtyInput = row.querySelector('.order-qty');
+
+  prodSel.addEventListener('change', () => updateOrderItemRow(row));
+  qtyInput.addEventListener('input', () => updateOrderItemRow(row));
+
+  // Если был предварительно выбран товар — ставим его
+  if (preSelectedProductId) {
+    prodSel.value = preSelectedProductId;
+    updateOrderItemRow(row);
+  } else if (prodSel.value) {
+    updateOrderItemRow(row);
+  }
 }
 
-function filterProductSelect(input, select) {
-  const text = input.value.trim().toLowerCase();
-  const options = Array.from(select.options);
-  const firstOption = options.shift(); // оставляем "-- выберите товар --"
+// Обновить цену и итог в одной строке
+function updateOrderItemRow(row) {
+  const prodSel = row.querySelector('select.order-product');
+  const qtyInput = row.querySelector('.order-qty');
+  const priceSpan = row.querySelector('.order-price');
+  const totalSpan = row.querySelector('.order-total');
 
-  options.forEach(opt => {
-    opt.style.display = opt.text.toLowerCase().includes(text) ? '' : 'none';
+  if (!prodSel.value || !qtyInput.value) {
+    priceSpan.textContent = '0.00 ₽';
+    totalSpan.textContent = '0.00 ₽';
+    return;
+  }
+
+  const product = getProducts().find(p => p.id == prodSel.value);
+  const qty = parseInt(qtyInput.value, 10);
+  if (!product) return;
+
+  const lineTotal = product.price * qty;
+  priceSpan.textContent = `${product.price.toFixed(2)} ₽/шт`;
+  totalSpan.textContent = `${lineTotal.toFixed(2)} ₽`;
+}
+
+// Фильтр строк таблицы по общему поиску
+function filterOrderItemsTable() {
+  const searchText = document.getElementById('order-product-search').value.trim().toLowerCase();
+  const rows = Array.from(document.querySelectorAll('#order-items tr'));
+
+  rows.forEach(row => {
+    const sel = row.querySelector('select.order-product');
+    const text = sel ? sel.options[sel.selectedIndex]?.text.toLowerCase() : '';
+    if (!searchText) {
+      row.style.display = '';
+      return;
+    }
+    row.style.display = text.includes(searchText) ? '' : 'none';
   });
-
-  select.insertBefore(firstOption, select.firstChild);
 }
 
+// Сохранение заказа
 function saveOrder() {
   const clientId = document.getElementById('order-client').value;
   const direction = document.getElementById('order-direction').value;
@@ -350,14 +388,14 @@ function saveOrder() {
   if (!direction) return alert('Выберите направление');
 
   const client = getClients().find(c => c.id == clientId);
-  const rows = document.querySelectorAll('#order-items > div');
+  const rows = document.querySelectorAll('#order-items tr');
   let total = 0;
   const items = [];
 
   rows.forEach(row => {
-    const prodSel = row.querySelector('select');
+    const prodSel = row.querySelector('select.order-product');
     const qtyInput = row.querySelector('.order-qty');
-    if (!prodSel.value || !qtyInput.value) return;
+    if (!prodSel.value || !qtyInput.value) return; // пропускаем пустые строки
 
     const product = getProducts().find(p => p.id == prodSel.value);
     const qty = parseInt(qtyInput.value, 10);
@@ -427,56 +465,43 @@ function renderClientProfile() {
 
   const orders = getOrders()
     .filter(o => o.clientId == clientId)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => new Date
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // История заказов
-  const historyBody = document.getElementById('client-orders-history');
-  historyBody.innerHTML = '';
+  // История заказов клиента
+  const historyList = document.getElementById('client-orders-history');
+  historyList.innerHTML = '';
   orders.forEach(o => {
-    const displayName = o.storeName ? `${o.storeName} (${o.clientName})` : o.clientName;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${o.date}</td>
       <td>${o.direction || '-'}</td>
-      <td>${displayName}</td>
+      <td>${o.storeName ? `${o.storeName} (${o.clientName})` : o.clientName}</td>
       <td>${o.total.toFixed(2)} ₽</td>
       <td class="status-${o.status}">${o.status}</td>
       <td>
         <button class="btn-edit" style="margin-right:4px;" onclick="editOrder(${o.id})">Изменить</button>
-        <button class="btn-delete" onclick="deleteOrder(${o.id})">Удалить</button>
+        <button class="btn-secondary" style="padding:4px 8px;" onclick="showOrderDetails(${o.id})">Детали</button>
       </td>`;
-    historyBody.appendChild(tr);
+    historyList.appendChild(tr);
   });
 
-  // Календарь по дням
+  // Календарь по дням (агрегация заказов и товаров)
   const calendarBody = document.getElementById('client-calendar-body');
   calendarBody.innerHTML = '';
 
-  const byDate = {};
+  const days = {};
   orders.forEach(o => {
-    if (!byDate[o.date]) byDate[o.date] = [];
-    byDate[o.date].push(o);
+    if (!days[o.date]) {
+      days[o.date] = { orders: [], items: [], total: 0 };
+    }
+    days[o.date].orders.push(o);
+    days[o.date].total += o.total;
+    o.items.forEach(i => days[o.date].items.push(i));
   });
 
-  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
-
-  dates.forEach(date => {
-    const dayOrders = byDate[date];
-    let dayTotal = 0;
-    const itemsList = [];
-
-    dayOrders.forEach(order => {
-      dayTotal += order.total;
-      order.items.forEach(item => {
-        itemsList.push({
-          orderId: order.id,
-          productName: item.productName,
-          qty: item.qty,
-          price: item.price,
-          lineTotal: item.total
-        });
-      });
-    });
+  Object.keys(days).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).forEach(date => {
+    const day = days[date];
 
     // Таблица заказов за день
     const ordersTable = document.createElement('table');
@@ -485,28 +510,25 @@ function renderClientProfile() {
     ordersTable.innerHTML = `
       <thead>
         <tr style="background:#f8f9fa;">
-          <th>Заказ ID</th>
+          <th>Заказ #</th>
           <th>Направление</th>
-          <th>Магазин (Точка)</th>
           <th>Сумма</th>
           <th>Статус</th>
         </tr>
       </thead>
       <tbody>`;
 
-    dayOrders.forEach(o => {
-      const displayName = o.storeName ? `${o.storeName} (${o.clientName})` : o.clientName;
+    day.orders.forEach(o => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>#${o.id}</td>
         <td>${o.direction || '-'}</td>
-        <td>${displayName}</td>
         <td>${o.total.toFixed(2)} ₽</td>
         <td class="status-${o.status}">${o.status}</td>`;
       ordersTable.querySelector('tbody').appendChild(tr);
     });
 
-    // Таблица товаров за день (плоский список всех позиций из всех заказов этого дня)
+    // Таблица товаров за день (все позиции из всех заказов этого дня)
     const itemsTable = document.createElement('table');
     itemsTable.style.width = '100%';
     itemsTable.style.borderCollapse = 'collapse';
@@ -521,23 +543,22 @@ function renderClientProfile() {
       </thead>
       <tbody>`;
 
-    itemsList.forEach(item => {
+    day.items.forEach(item => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${item.productName}</td>
         <td>${item.qty}</td>
         <td>${item.price.toFixed(2)} ₽/шт</td>
-        <td>${item.lineTotal.toFixed(2)} ₽</td>`;
+        <td>${item.total.toFixed(2)} ₽</td>`;
       itemsTable.querySelector('tbody').appendChild(tr);
     });
 
-    // Строка для календаря: дата + 2 таблицы + итог за день
     const calendarRow = document.createElement('tr');
     calendarRow.innerHTML = `
       <td><strong>${date}</strong></td>
       <td style="vertical-align:top;">${ordersTable.outerHTML}</td>
       <td style="vertical-align:top;">${itemsTable.outerHTML}</td>
-      <td><strong>${dayTotal.toFixed(2)} ₽</strong></td>`;
+      <td><strong>${day.total.toFixed(2)} ₽</strong></td>`;
     calendarBody.appendChild(calendarRow);
   });
 }
