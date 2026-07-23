@@ -20,7 +20,7 @@
   <!-- Основной контент -->
   <main class="content">
 
-    <!-- Секция: Клиенты -->
+    <!-- Секция: Клиенты (с поиском и полем Магазин) -->
     <section id="clients" class="section active">
       <h3>Клиенты</h3>
       <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -36,7 +36,7 @@
       </table>
     </section>
 
-    <!-- Секция: Товары -->
+    <!-- Секция: Товары (с поиском) -->
     <section id="products" class="section">
       <h3>Товары</h3>
       <div class="form-card" style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -85,7 +85,6 @@
     <!-- Секция: Новый/редактирование заказа -->
     <section id="create-order" class="section">
       <h3 id="create-order-title">Новый заказ</h3>
-
       <div class="form-card" style="display:flex; flex-wrap:wrap; gap:12px;">
         <div style="flex:1; min-width:200px;">
           <label>Клиент</label>
@@ -103,30 +102,14 @@
       </div>
 
       <h4>Состав заказа</h4>
+      <!-- Каждая строка: поиск + select + кол-во + кнопка удаления -->
+      <div id="order-items"></div>
+      <button onclick="addOrderItemRow()" class="btn-secondary" style="margin-top:8px;">+ Добавить позицию</button>
 
-      <!-- Общий поиск по товарам -->
-      <input type="text" id="order-product-search" placeholder="Поиск товара по наименованию…" 
-             style="width:100%; max-width:400px; padding:8px; margin-bottom:12px;" />
-
-      <!-- Таблица позиций заказа -->
-      <table style="width:100%; border-collapse:collapse; margin-top:8px;">
-        <thead>
-          <tr style="background:#f8f9fa;">
-            <th style="padding:8px; text-align:left; border:1px solid #ddd;">Товар</th>
-            <th style="padding:8px; text-align:right; border:1px solid #ddd;">Кол-во</th>
-            <th style="padding:8px; text-align:right; border:1px solid #ddd;">Цена</th>
-            <th style="padding:8px; text-align:right; border:1px solid #ddd;">Итого</th>
-            <th style="padding:8px; border:1px solid #ddd;"></th>
-          </tr>
-        </thead>
-        <tbody id="order-items"></tbody>
-      </table>
-
-      <button onclick="addOrderItemRow()" class="btn-secondary" style="margin-top:12px;">+ Добавить позицию</button>
       <button onclick="saveOrder()" class="btn-primary" style="margin-top:16px;">Сохранить заказ</button>
     </section>
 
-    <!-- Секция: Профиль клиента -->
+    <!-- Секция: Профиль клиента (история + подробный календарь) -->
     <section id="client-profile" class="section">
       <a href="#" onclick="showSection('clients');return false;" style="color:#007bff;">← Назад к клиентам</a>
       <h3 id="client-profile-name"></h3>
